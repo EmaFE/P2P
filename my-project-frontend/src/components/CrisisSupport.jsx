@@ -1,0 +1,27 @@
+import React from 'react'
+
+const CrisisSupport = ({onClose}) =>{
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-xs"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white rounded-xl p-6 z-10 max-w-sm w-full">
+        <h2 className="text-lg font-semibold">Crisis Contact</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Crisis contact to be obtained through cookie or default to irish (prefer 1st)
+        </p>
+
+        <button
+          onClick={onClose}
+          className="cursor-pointer mt-4 px-4 py-2 bg-black text-white rounded"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default CrisisSupport
