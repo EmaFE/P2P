@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from "../util/authContext"
 
 const Communitycard = ({name, description, route}) =>{
 
@@ -9,6 +10,11 @@ const Communitycard = ({name, description, route}) =>{
   const handleCardHover = (size) =>{
     return cardHover ? "line-clamp-none" : `line-clamp-${size}`
   }
+
+  const {user, loading} = useAuth()
+  
+  if (loading) return null;
+  
 
   return(
     <div className="bg-slate-100 px-10 py-5 rounded-2xl md:px-20 md:py-20 shadow-sm transition duration-300 bg-white/50 hover:scale-115 hover:bg-white hover:shadow-xl"
@@ -31,7 +37,7 @@ const Communitycard = ({name, description, route}) =>{
         cursor-pointer hover:bg-[var(--color-eight)]/70 hover:shadow-md hover:text-black decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
         onClick={() => navigate(route)}
       >
-        Join
+        {user ? "Enter" : "Join"}
       </button>
     </div>
   )

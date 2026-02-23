@@ -9,7 +9,7 @@ const AuthLayout = ({children, image, altText}) =>{
   return(
     <div className='flex flex-initial'>
       <div className='w-screen h-screen md:w-[60vw] px-12 pt-17 pb-12'>
-        <button className='cursor-pointer' onClick={() => navigate("/home")}> 
+        <button className='cursor-pointer' onClick={() => navigate("/")}> 
           <h2 className='text-3xl font-medium text-black mb-5'>Peer 2 Peer Support Platform</h2>
         </button>
         {children}

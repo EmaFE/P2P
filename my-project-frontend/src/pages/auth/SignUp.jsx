@@ -6,6 +6,9 @@ import Input from "./Input"
 import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
+import { auth } from "../../config/firebase"
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
+
 
 const SignUp = () =>{
   
@@ -37,6 +40,11 @@ const SignUp = () =>{
       return;
     }
 
+    if(password.length < 6){
+      setError("Please enter a password of at least 6 characters")
+      return;
+    }
+
     if(!passwordCheck){
       setError("Please confirm your password.")
       return;
@@ -52,18 +60,13 @@ const SignUp = () =>{
       return;
     }
 
-    const res = await fetch("http://localhost:8080/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, username, password })
-    });
-
-    const data = await res.json();
-
-    localStorage.setItem("userToken", data.token);
-
-    navigate("/home")
-
+    try{
+      await createUserWithEmailAndPassword(auth, email, password)
+       navigate("/home")
+    } catch(error){
+      console.error(error)
+    }
+    
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -122,7 +125,7 @@ const SignUp = () =>{
               value={password}
               onChange={setPassword}
               label="Password"
-              placeholder="minimum 8 characters"
+              placeholder="minimum 6 characters"
               type="password"
               onKeyDown={(e) => handleEnter(e, passwordCheckRef)}
             />

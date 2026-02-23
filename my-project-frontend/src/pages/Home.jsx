@@ -10,6 +10,7 @@ import ai from '../assets/images/ai.svg'
 import human from '../assets/images/human.svg'
 import anonymous from '../assets/images/anonymous.svg'
 import CrisisSupport from '../components/CrisisSupport'
+import { useAuth } from "../util/authContext"
 
 const Home = () =>{
   
@@ -43,27 +44,31 @@ const Home = () =>{
   const isVisible3 = useIsVisible(sliderRef3)
   const isVisible4 = useIsVisible(sliderRef4)
 
+  const {user, loading} = useAuth()
+
+  if (loading) return null;
+
   return(
     <div id="top" className='scroll-mt-24'>
       <NavBar/>
-      <section className='flex items-center justify-center mt-20 md:mt-25'>
+      <section className='flex items-center justify-center mt-20 md:mt-25 mb-35'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mx-5 place-items-center'>
         <div className='relative flex flex-col mx-auto my-6 px-5 py-5 w-[clamp(20rem,40vw,42rem)] max-md:bg-lime-100 max-md:rounded-xl lg:px-12'>
           <img
             src={blob}
             alt="blob"
-            className="hidden xl:block absolute inset-0 -translate-y-[20%] -translate-x-[2%] w-[110%] max-w-none opacity-60 -z-10 pointer-events-none"
+            className="hidden xl:block absolute inset-0 -translate-y-[20%] -translate-x-[2%] w-[120%] max-w-none opacity-60 -z-10 pointer-events-none"
           />
           <h2 className='text-4xl font-bold mb-4 text-left'>Hi!</h2>
             <h4 className='mb-4 text-2xl font-semibold text-slate-600'>
-              <button 
+              {!user && <button 
                 className='cursor-pointer px-4 py-1 mr-2 bg-[var(--color-six)] text-white rounded-lg border border-transparent mb-4
                 hover:border-slate-200 hover:bg-[var(--color-eight)]/70 hover:shadow-md hover:text-slate-600 decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
                 onClick={() => navigate("/login")}
                 >
                   Join us
-              </button>
-              and let's start chatting!
+              </button> }
+              { user ? "Let's start chatting!" : " and let's start chatting!"} 
             </h4>
             <p className='text-xl'>Peer2Peer is a safe, anonymous and confidential community for users to support each other through mental health and day to day struggles.</p>
           </div>

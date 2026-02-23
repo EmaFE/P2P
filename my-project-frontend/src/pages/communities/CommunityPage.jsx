@@ -195,8 +195,6 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
       </main>
 
             
-    
-    
       <NewPostWindow
         open={isNewPost}
         onOpenChange={setIsNewPost}

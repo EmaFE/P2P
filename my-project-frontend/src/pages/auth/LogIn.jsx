@@ -1,9 +1,12 @@
 import React, { use } from 'react'
 import AuthLayout from './AuthLayout'
 import Input from './Input'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { validateEmail, checkPassword } from '../../util/helper'
 import logImage from '../../assets/images/logIn.jpg'
+
+import { auth } from "../../config/firebase"
+import { signInWithEmailAndPassword } from 'firebase/auth'
 
 const LogIn = () =>{
   const emailRef = React.createRef()
@@ -12,6 +15,9 @@ const LogIn = () =>{
   const[email, setEmail] = React.useState('')
   const[password, setPassword] = React.useState('')
   const[error, setError] = React.useState('')
+
+
+  let navigate = useNavigate()
 
   const handleLogin = async (event) =>{
     event.preventDefault()
@@ -26,17 +32,13 @@ const LogIn = () =>{
       setError('Please enter the correct password.')
       return;
     }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/")
+    } catch (error) {
+      console.error(error)
+    }
     
-    const res = await fetch("http://localhost:8080/auth/logIn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-
-    const data = await res.json();
-
-    localStorage.setItem("userToken", data.token);
-
   }
 
   const handleEnter = (e, nextRef) =>{

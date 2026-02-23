@@ -4,12 +4,24 @@ import peerIcon from '../assets/images/group.svg'
 import { useNavigate } from 'react-router-dom'
 import CrisisSupport from './CrisisSupport'
 
+import { auth } from "../config/firebase"
+import { signOut } from 'firebase/auth'
+
 const NavBar = () =>{
 
   let navigate = useNavigate()
   const[isOpen, setIsOpen] = React.useState(false)
 
   const [open, setOpen] = React.useState(false)
+
+  const logOut = async () =>{
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error(error)
+    }
+    navigate("/login")
+  }
 
   return(
     <div className='sticky top-0 bg-white lg:w-[100%] h-auto md:h-full flex justify-between px-6 md:px-20 py-4 border-b-1 border-slate-300 shadow-black/20 z-50 w-screen'>
@@ -26,9 +38,15 @@ const NavBar = () =>{
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
         onClick={ (e) =>{
           e.preventDefault()
-          setOpen(true)
+          // setOpen(true)
         }}
         >Crisis Support</button>
+        <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
+        onClick={ (e) =>{
+          e.preventDefault()
+          logOut()
+        }}
+        >Log Out</button>
         
       </div>
       {open && <CrisisSupport onClose={() => setOpen(false)} />}
