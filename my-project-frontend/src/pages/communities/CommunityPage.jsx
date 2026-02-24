@@ -13,7 +13,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 
   const mocks = [
   { id: 1, title: "Welcome to our community!", content: "We're so glad to have you here. Feel free to introduce yourself and share your story with others who understand.", category: "General" },
-  { id: 2, title: "Tips for managing daily challenges", content: "Here are some strategies that have helped me: taking breaks when needed, practicing mindfulness, and reaching out to supportive friends.", category: "Advice" },
+  { id: 2, title: "Tips for managing daily challenges", content: "Here are some strategies that have helped me: taking breaks when needed, practicing mindfulness, and reaching out to supportive friends.", category: "Reflections" },
   { id: 3, title: "Weekly check-in thread", content: "How is everyone doing this week? Share your wins, struggles, or just say hi!", category: "General" },
   { id: 4, title: "Resource recommendations", content: "I found this amazing book that really helped me understand my journey better. Has anyone else found helpful resources they'd like to share?", category: "Advice" },
   { id: 5, title: "Celebrating small victories", content: "Today I managed to complete a task I'd been avoiding for weeks. It feels great! What small wins are you celebrating?", category: "General" },
@@ -26,9 +26,18 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   const [posts, setPosts] = useState(mocks);
   const [isNewPost, setIsNewPost] = useState(false);
 
-  const filteredPosts = posts.filter(
-    (post) => post.category.toLowerCase() === activeCategory.toLowerCase() || []
-  )
+  // const filteredPosts = posts.filter(
+  //   (post) => post.category.toLowerCase() === activeCategory.toLowerCase() || []
+  // )
+
+   const filteredPosts = () =>{
+    console.log("active category: " + activeCategory)
+    posts.map((post) =>{
+      console.log("post category: " + post.category)
+    })
+    
+    return posts.filter((post) => post.category.toLowerCase() === activeCategory.toLowerCase())
+  }
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
@@ -52,18 +61,6 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
     }
     setPosts([newPost, ...posts]);
   }
-
-  console.log("CommunityPage props:", {
-  communityName,
-  description,
-  categories,
-  filterOptions,
-  sortOptions,
-  activeCategory,
-  posts,
-  filteredPosts,
-});
-
 
   return(
     <div className="flex flex-1 top-0">
@@ -168,8 +165,8 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
           
           <div className="max-w-3xl">
             {
-              filteredPosts.length > 0 ? (
-                filteredPosts.map((post) =>(
+              filteredPosts().length > 0 ? (
+                filteredPosts().map((post) =>(
                   <Post key={post.id} title={post.title} content={post.content}/>
                 ))
               ) : (
@@ -199,6 +196,8 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
         open={isNewPost}
         onOpenChange={setIsNewPost}
         onSubmit={handleCreatePost}
+        categories={categories}
+        tagOptions={filterOptions}
       />
     </div>
   )

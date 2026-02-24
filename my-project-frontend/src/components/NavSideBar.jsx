@@ -4,8 +4,15 @@ import { useIsMobile } from "../util/useIsMobile";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button"
+import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent } from "./ui/combobox"
 
 const NavSideBar = () =>{
+
+   const communities = [
+    {title: "Anxiety", url: "/community/anxiety" },
+    {title: "Grief", url: "/community/grief" },
+    {title: "University Students", url: "/community/universityStudents" }
+  ]
 
   const items = [
     {title: "Communities", url: "/communities", icon: Users},
@@ -24,8 +31,29 @@ const NavSideBar = () =>{
   const sidebarContent = (
       <nav className="sticky flex flex-col h-screen gap-2 p-4 mt-1">
         {
-          items.map((item) =>(
-            <NavLink
+          items.map((item) =>{
+            if (item.title === "Communities"){
+              return  <Combobox communities={communities}>
+                        <ComboboxContent>
+                          <ComboboxEmpty>No items found.</ComboboxEmpty>
+                          <ComboboxList>
+                            {communities.map((community) => (
+                              <ComboboxItem key={community.title} value={community.title}>
+                                <NavLink
+                                    key={community.title}
+                                    to={community.url}
+                                    className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
+                                  >
+                                    <item.icon className="h-5 w-5"/>
+                                    <span className="text-sm font-medium">{community.title}</span>
+                                  </NavLink>
+                              </ComboboxItem>
+                            ))}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+            }
+            return <NavLink
               key={item.title}
               to={item.url}
               className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
@@ -33,7 +61,7 @@ const NavSideBar = () =>{
               <item.icon className="h-5 w-5"/>
               <span className="text-sm font-medium">{item.title}</span>
             </NavLink>
-          ))
+          })
         }
       </nav>
   )
