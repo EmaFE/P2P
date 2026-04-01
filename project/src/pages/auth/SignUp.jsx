@@ -6,8 +6,9 @@ import Input from "./Input"
 import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
-import { auth } from "../../config/firebase"
+import { auth, db } from "../../config/firebase"
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 
 const SignUp = () =>{
@@ -61,12 +62,17 @@ const SignUp = () =>{
     }
 
     try{
-      await createUserWithEmailAndPassword(auth, email, password)
-       navigate("/home")
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        username: username,
+        email: email,
+        createdAt: serverTimestamp(),
+      });
+      navigate("/")
     } catch(error){
       console.error(error)
     }
-    
   }
 
   const handleEnter = (e, nextRef) =>{

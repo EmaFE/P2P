@@ -2,7 +2,7 @@ import React from "react";
 import NavSideBar from "../../components/NavSideBar";
 import CommunityPage from "./CommunityPage";
 
-const CommunityLayout = ({name, description, categories, filterOptions}) =>{
+const CommunityLayout = ({name, description, categories, filterOptions, sortOptions}) =>{
 
   return(
     <div className="flex">
@@ -12,7 +12,7 @@ const CommunityLayout = ({name, description, categories, filterOptions}) =>{
         description={description}
         categories={categories}
         filterOptions={filterOptions}
-        sortOptions={["Newest", "Most Commented", "Oldest"]}
+        sortOptions={sortOptions}
       />
     </div>
   )

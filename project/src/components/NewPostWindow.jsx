@@ -17,12 +17,12 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
 
 
   const handleSubmit = () =>{
-    if(title.trim() && content.trim() && category.trim() && tags.trim()){
-      onSubmit({title: title.trim(), content: content.trim()})
+    if(title.trim() && content.trim() && category){
+      onSubmit({title: title.trim(), content: content.trim(), category: category, tags: tags})
       setTitle("")
       setContent("")
       setCategory("")
-      setTags("")
+      setTags([])
       onOpenChange(false)
     }
   }
@@ -50,7 +50,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
 
         <div className='space-y-4 py-4 max-w-md max-h-screen'>
           <div className='space-y-2'>
-            <label>Title</label>
+            <label>Title*</label>
             <Input
               id="title"
               placeholder="Enter post title here"
@@ -59,7 +59,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
             />
           </div>
             <div className="space-y-2 max-w-md max-h-screen">
-              <label>Content</label>
+              <label>Content*</label>
               <Textarea
                 id="content"
                 placeholder="Enter post content here"
@@ -72,7 +72,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
             {/* add radiobox component to select category*/}
             <div>
               <label>Category</label>
-              <RadioGroup defaultValue="option-one">
+              <RadioGroup  className="mt-2" defaultValue="option-one">
                 <div className="flex items-center gap-3">
                   <RadioGroupItem value="option-one" id="option-one" />
                   <Label htmlFor="option-one">{categories[0]}</Label>
@@ -87,7 +87,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
 
             {/* add tags with popover + checkbox components */}
             <div>
-              <label>Tags</label>
+              <label className='mr-3'>Tags</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button>{tags.join(", ") || "Select tags"}</Button>
@@ -109,7 +109,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
           </div>
 
 
-          {/* UPON SUCCESFULLY CREATING ANEW POST SHOW SOONER ELEM */}
+          {/* UPON SUCCESFULLY CREATING A NEW POST SHOW SOONER ELEM */}
         
 
         <DialogFooter>

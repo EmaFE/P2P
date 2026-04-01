@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const FilterSortSideBar = ({ filterOptions, sortOptions, selectedFilters, selectedSort, changeFilters, changeSort}) =>{
 
   return(
-    <aside className='sticky top-72 h-[400px] w-64 border bg-slate-200 flex-shrink-0 rounded-lg mr-20 p-4 hidden lg:block'>
+    <aside className='sticky top-72 h-[450px] w-64 border bg-slate-200 flex-shrink-0 rounded-lg md:mr-25 lg:mr-45 p-4 hidden md:block lg:block'>
       <div className='space-y-6'>
         <div>
           <h3 className='text-sm font-bold uppercase tracking-wide mb-3'>

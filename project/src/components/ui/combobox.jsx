@@ -32,9 +32,7 @@ function ComboboxTrigger({
       className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
       {...props}>
       {children}
-      <ChevronDownIcon
-        data-slot="combobox-trigger-icon"
-        className="text-muted-foreground pointer-events-none size-4" />
+      
     </ComboboxPrimitive.Trigger>
   );
 }

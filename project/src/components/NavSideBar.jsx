@@ -4,7 +4,7 @@ import { useIsMobile } from "../util/useIsMobile";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button"
-import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent } from "./ui/combobox"
+import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent, ComboboxTrigger } from "./ui/combobox"
 
 const NavSideBar = () =>{
 
@@ -12,7 +12,7 @@ const NavSideBar = () =>{
     {title: "Anxiety", url: "/community/anxiety" },
     {title: "Grief", url: "/community/grief" },
     {title: "University Students", url: "/community/universityStudents" }
-  ]
+  ] 
 
   const items = [
     {title: "Communities", url: "/communities", icon: Users},
@@ -33,25 +33,32 @@ const NavSideBar = () =>{
         {
           items.map((item) =>{
             if (item.title === "Communities"){
-              return  <Combobox communities={communities}>
-                        <ComboboxContent>
-                          <ComboboxEmpty>No items found.</ComboboxEmpty>
-                          <ComboboxList>
-                            {communities.map((community) => (
-                              <ComboboxItem key={community.title} value={community.title}>
-                                <NavLink
-                                    key={community.title}
-                                    to={community.url}
-                                    className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
-                                  >
-                                    <item.icon className="h-5 w-5"/>
-                                    <span className="text-sm font-medium">{community.title}</span>
-                                  </NavLink>
-                              </ComboboxItem>
-                            ))}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
+              return (
+                <Combobox key={item.title} communities={communities}>
+                  <ComboboxTrigger>
+                    <div className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:text-slate-100">
+                      <item.icon className="h-5 w-5" />
+                      <span className="text-sm font-medium">Communities</span>
+                    </div>
+                  </ComboboxTrigger>
+
+                  <ComboboxContent>
+                    <ComboboxList>
+                      {communities?.map((community) => (
+                        <ComboboxItem key={community.title} value={community.title}>
+                          <NavLink
+                            to={community.url}
+                            className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
+                          >
+                            <item.icon className="h-5 w-5" />
+                            <span className="text-sm font-medium">{community.title}</span>
+                          </NavLink>
+                        </ComboboxItem>
+                      ))}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              )
             }
             return <NavLink
               key={item.title}
@@ -70,7 +77,7 @@ const NavSideBar = () =>{
     return (
       <>
       {console.log("NavSideBar mounted")}
-        {/* Hamburger button - fixed position */}
+        {/*hamburger button - fixed position */}
         <Button
           variant="ghost"
           size="icon"
@@ -79,14 +86,14 @@ const NavSideBar = () =>{
         >
           {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
-        {/* Overlay */}
+        {/*overlay */}
         {isOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-40"
             onClick={() => setIsOpen(false)}
           />
         )}
-        {/* Slide-in sidebar */}
+        {/*slide-in sidebar */}
         <aside
           className={cn(
             "fixed top-0 left-0 h-full w-64 border-r z-50 transform transition-transform duration-300 ease-in-out",

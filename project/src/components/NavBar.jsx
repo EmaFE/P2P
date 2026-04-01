@@ -38,7 +38,7 @@ const NavBar = () =>{
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
         onClick={ (e) =>{
           e.preventDefault()
-          // setOpen(true)
+          setOpen(true)
         }}
         >Crisis Support</button>
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
