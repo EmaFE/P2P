@@ -80,7 +80,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
      async function loadPosts() {
     const newPosts = await fetchPosts();
     setPosts(newPosts);
-    console.log("Fetched posts: ", newPosts)
+    //console.log("Fetched posts: ", newPosts)
   }
 
   loadPosts();

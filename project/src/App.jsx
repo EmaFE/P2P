@@ -17,7 +17,8 @@ import { AuthProvider } from './util/authContext'
 import Anxiety from './pages/communities/Anxiety'
 import Grief from './pages/communities/Grief'
 import Uni from './pages/communities/Uni'
-import { Toaster, toast } from 'sonner'
+import { Toaster } from 'sonner'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 export default function App(){
   return(
@@ -29,10 +30,10 @@ export default function App(){
             <Route path="/" exact element={<Home />}/>
             <Route path="/login" exact element={<LogIn />}/>
             <Route path="/signup" exact element={<SignUp />}/>
-            <Route path="/communities" excat element={<Communities />}/>
-            <Route path="/community/anxiety" exact element={<Anxiety />}/>
-            <Route path="/community/grief" exact element={<Grief />}/>
-            <Route path="/community/universityStudents" exact element={<Uni />}/>
+            <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>}/>
+            <Route path="/community/anxiety" exact element={<ProtectedRoute><Anxiety /></ProtectedRoute>}/>
+            <Route path="/community/grief" exact element={<ProtectedRoute><Grief /></ProtectedRoute>}/>
+            <Route path="/community/universityStudents" exact element={<ProtectedRoute><Uni /></ProtectedRoute>}/>
           </Routes>
         </Router>
       </AuthProvider>
