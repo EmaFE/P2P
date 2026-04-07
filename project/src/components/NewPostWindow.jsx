@@ -7,35 +7,39 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label'
 import { Checkbox } from './ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { toast } from 'sonner';
 
 const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) =>{
 
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
-  const [category, setCategory] = React.useState("");
+  const [category, setCategory] = React.useState(categories[0]);
   const [tags, setTags] = React.useState([]);
 
 
   const handleSubmit = () =>{
-    if(title.trim() && content.trim() && category){
+    if(title.trim() != "" && content.trim() != "" && category){
       onSubmit({title: title.trim(), content: content.trim(), category: category, tags: tags})
       setTitle("")
       setContent("")
       setCategory("")
       setTags([])
       onOpenChange(false)
+    } else if(!category){
+      toast.error("Please select a category.");
+    } else if (!title.trim() || !content.trim()){
+      toast.error("Title and content cannot be empty.");
     }
   }
 
-    const toggleTag = (tag) => {
+  //if tag is already selected, deselect it, otherwise select it; multiple tags can be selected
+  const toggleTag = (tag) => {
     if (tags.includes(tag)) {
       setTags(tags.filter(t => t !== tag));
     } else {
       setTags([...tags, tag]);
     }
   };
-
-  console.log("tags prop" + tagOptions)
 
 
   return(
@@ -71,16 +75,19 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
             
             {/* add radiobox component to select category*/}
             <div>
-              <label>Category</label>
-              <RadioGroup  className="mt-2" defaultValue="option-one">
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem value="option-one" id="option-one" />
-                  <Label htmlFor="option-one">{categories[0]}</Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RadioGroupItem value="option-two" id="option-two" />
-                  <Label htmlFor="option-two">{categories[1]}</Label>
-                </div>
+              <label>Category*</label>
+              <RadioGroup
+                className="mt-2"
+                
+                onValueChange={(val) => setCategory(val)}
+                defaultValue={categories[0]}
+              >
+                {categories.map((cat, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <RadioGroupItem value={cat} id={`option-${index}`} />
+                    <Label htmlFor={`option-${index}`}>{cat}</Label>
+                  </div>
+                ))}
               </RadioGroup>
 
             </div>
@@ -107,10 +114,6 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
             </div>
             
           </div>
-
-
-          {/* UPON SUCCESFULLY CREATING A NEW POST SHOW SOONER ELEM */}
-        
 
         <DialogFooter>
           <Button 

@@ -17,10 +17,12 @@ import { AuthProvider } from './util/authContext'
 import Anxiety from './pages/communities/Anxiety'
 import Grief from './pages/communities/Grief'
 import Uni from './pages/communities/Uni'
+import { Toaster, toast } from 'sonner'
 
 export default function App(){
   return(
     <div>
+      <Toaster richColors position="top-center" />
       <AuthProvider>
         <Router>
           <Routes>

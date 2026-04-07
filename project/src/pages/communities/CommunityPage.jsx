@@ -9,67 +9,13 @@ import Post from "../../components/Post";
 import NewPostWindow from "../../components/NewPostWindow";
 import FilterSortSideBar from "../../components/FilterSortSideBar";
 import { useAuth } from "@/util/authContext";
-import { serverTimestamp, addDoc, collection, getDocs} from "firebase/firestore";
-import { db } from "../../config/firebase";
+import { collection, getDocs, onSnapshot, query, addDoc, where, serverTimestamp} from "firebase/firestore";
+import { db, fetchPosts, createPost } from "../../config/firebase";
+import { toast } from "sonner";
 
 const CommunityPage = ({communityName, description, categories, filterOptions, sortOptions}) =>{
 
-  const mocks = [
-  { title: "Welcome to our community!", content: "We're so glad to have you here. Feel free to introduce yourself and share your story with others who understand.", username: "user1", likes: 1, tags: ["introduction"], category: "General" },
-  {title: "Tips for managing daily challenges", content: "Here are some strategies that have helped me: taking breaks when needed, practicing mindfulness, and reaching out to supportive friends.", username: "user2", tags: ["tips", "challenges"], category: "Reflections" },
-  {title: "Weekly check-in thread", content: "How is everyone doing this week? Share your wins, struggles, or just say hi!", username: "user3", likes: 2, comments:[], tags: ["check-in", "weekly"], category: "General" },
-  { title: "Resource recommendations", content: "I found this amazing book that really helped me understand my journey better. Has anyone else found helpful resources they'd like to share?", username: "user4", tags: ["resources", "books"], category: "Advice" },
-  { title: "Celebrating small victories", content: "Today I managed to complete a task I'd been avoiding for weeks. It feels great! What small wins are you celebrating?", username: "user5", tags: ["celebration", "victories", "wins", "accomplishments", "success", "motivation", "wins", "accomplishments", "success", "motivation"], category: "General" },
-];
-
-const seedPosts = async () => {
-  try {
-    const postsRef = collection(db, "posts");
-
-    for (let post of mocks) {
-      await addDoc(postsRef, {
-        id: Date.now() + Math.random(),
-        username: post.username,
-        title: post.title,
-        content: post.content,
-        likes: 0,
-        comments: [],
-        tags: post.tags,
-        category: post.category,
-        createdAt: serverTimestamp(),
-        reported: false,
-      });
-    }
-
-    console.log("10 mock posts added!");
-  } catch (error) {
-    console.error("Error adding posts:", error);
-  }
-};
-
-
-// React.useEffect(() => {
-//   seedPosts();
-// }, []);
-
-
-const showPosts = async () => {
-  try {
-    const postsRef = collection(db, "posts");
-    const snapshot = await getDocs(postsRef); 
-    const postsData = snapshot.docs.map((doc) => ({
-      ...doc.data(),
-      firestoreId: doc.id, //include Firestore document ID
-    }));
-    return postsData;
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-  }
-};
-
-
   const { user } = useAuth();
-
   const isMobile  = useIsMobile();
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [selectedFilters, setSelectedFilters] = useState([]);
@@ -77,56 +23,100 @@ const showPosts = async () => {
   const [posts, setPosts] = useState([]);
   const [isNewPost, setIsNewPost] = useState(false);
 
-  // const filteredPosts = posts.filter(
-  //   (post) => post.category.toLowerCase() === activeCategory.toLowerCase() || []
-  // )
+  
+  async function handleCreatePost(post) {
+    const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+    const username = userDoc.docs[0]?.data()?.username;
 
-  //to make posts an array, not a promise, we need to use useEffect to fetch the posts on component mount and set them in state. Then we can filter the posts based on the active category and selected filters/sort options.
+    // const now = new Date();
+    // const newPost = {
+    //   id: Date.now() + Math.random(),
+    //   username: username,
+    //   title: post.title,
+    //   content: post.content,
+    //   likes: 0,
+    //   commentsCount: 0,
+    //   tags: post.tags,
+    //   category: activeCategory,
+    //   createdAt: now,
+    //   reported: false,
+    //   community: communityName.toLowerCase(),
+    //   bookmarked: false,
+    // }
+
+    // try {      
+    //   await addDoc(collection(db, "posts"), {
+    //   ...newPost,
+    //   createdAt: serverTimestamp()
+    // });
+    try{       
+      await createPost({ title: post.title, content: post.content, username: username, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
+      const newPosts = await fetchPosts();
+      setPosts(newPosts);
+     // console.log("new posts: ", newPosts)
+    } catch (error) {
+     // console.error("Error creating post:", error);
+    }
+    
+  }
+
+
+//   React.useEffect(() => {
+//   const postsRef = collection(db, "posts");
+
+//   const unsubscribe = onSnapshot(postsRef, (snapshot) => {
+//     const postsData = snapshot.docs.map((doc) => ({
+//       ...doc.data(),
+//       firestoreId: doc.id,
+//     }));
+
+//     setPosts(postsData);
+//   });
+
+//   return () => unsubscribe(); //cleanup
+// }, []);
+
   React.useEffect(() => {
-    const fetchPosts = async () => {
-      const data = await showPosts();
-      setPosts(data);
-    };
+     async function loadPosts() {
+    const newPosts = await fetchPosts();
+    setPosts(newPosts);
+    console.log("Fetched posts: ", newPosts)
+  }
 
-    fetchPosts();
-  }, []);
+  loadPosts();
+}, []);
 
-   const filteredPosts = () =>{  
-     return posts.filter((post) => {
+  const filteredPosts = () =>{  
+    return posts.filter((post) => {
+
+      const communityMatch = post.community === communityName.toLowerCase();
       const categoryMatch = post.category && post.category.toLowerCase() === activeCategory.toLowerCase()
       
       //i want posts to match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
-      console.log("selected filters: " + selectedFilters)
       const filterMatch = selectedFilters.length === 0 || selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
 
-      return categoryMatch && filterMatch;
+      return categoryMatch && filterMatch && communityMatch;
     })
-  }
+  } 
 
-  //not correct 
-  //only one sort, cus now i can select more than one
+
   //sort by newest as default, so if no sort is selected, sort by newest
   const sortedPosts = () =>{
     return filteredPosts().sort((a, b) =>{
       if(selectedSort === "Most Liked"){
         return b.likes - a.likes;
       } else if (selectedSort === "Most Commented"){
-        return b.comments - a.comments;
+        return b.commentsCount - a.commentsCount;
       } else if (selectedSort === "Newest"){
-       // console.log("sort" + selectedSort)
-        // filteredPosts().forEach(post => console.log("post: " + post.title + " createdAt: " + post.createdAt))
-       // console.log(filteredPosts().map(p => p.createdAt.toDate()));
-        return b.createdAt.toDate() - a.createdAt.toDate();
+        //console.log("sorting by newest: ", a.createdAt, b.createdAt)
+        return b.createdAt - a.createdAt;
       } else if (selectedSort === "Oldest"){
-        return a.createdAt.toDate() - b.createdAt.toDate();
+        return a.createdAt - b.createdAt;
       } else{
         return 0;
       }})
   }
 
-  //suggestion - look into it !!!
-  //to avoid sorting and filtering on every render, we can use useMemo to memoize the sorted and filtered posts. This way, they will only be recalculated when the dependencies (posts, activeCategory, selectedFilters, selectedSort) change.  
- // const memoizedFilteredPosts = React.useMemo(() => filteredPosts(), [posts, activeCategory, selectedFilters]);
   const visiblePosts = sortedPosts();
 
   const toggleFilter = (option) =>{
@@ -140,33 +130,14 @@ const showPosts = async () => {
   //if it's not selected, select it 
   const toggleSort = (option) =>{
     setSelectedSort((prev) =>{
-      //remove if already selected, add if not selected
       return prev == option ? "Newest" : option
     })
-  }
-
-  {/*come back to this*/}
-  const handleCreatePost = async (post) =>{
-    const currUser = await setDoc(doc(db, "users", user.uid))
-    const newPost = {
-      id: Date.now() + Math.random(),
-      username: currUser.username,
-      title: post.title,
-      content: post.content,
-      likes: 0,
-      comments: [],
-      tags: post.tags,
-      category: activeCategory,
-      createdAt: serverTimestamp(),
-      reported: false,
-    }
-    setPosts([newPost, ...posts]);
   }
 
   return(
     <div className="flex flex-1 top-0">
       <main className="flex flex-col flex-1">
-        <header className="sticky top-0 z-10 bg-slate-300 border-b px-7 md:px-6 py-5 pt-7 rounded-lg">
+        <header className="sticky top-0 z-5 bg-slate-300 border-b px-7 md:px-6 py-5 pt-7 rounded-lg">
 
           <div className="mb-4">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
@@ -270,15 +241,16 @@ const showPosts = async () => {
                 visiblePosts.length > 0 ? (
                   visiblePosts.map((post) =>(
                     <Post 
-                      key={post.firestoreId}
-                      id={post.firestoreId} 
+                      key={post.id}
+                      id={post.id} 
                       title={post.title} 
                       content={post.content}
                       username={post.username}
                       createdAt={post.createdAt}
                       likes={post.likes}
-                      comments={post.comments}
+                      commentsCount={post.commentsCount}
                       tags={post.tags}
+                      //bookmarkedPost={post.bookmarked}
                     />
                   ))
                 ) : (
@@ -290,7 +262,7 @@ const showPosts = async () => {
               }
             </div>
           </ScrollArea>
-          {/*right sidebar - desktop only */}
+          {/*right fixed sidebar - desktop only */}
           {!isMobile && 
             <FilterSortSideBar
               filterOptions={filterOptions}

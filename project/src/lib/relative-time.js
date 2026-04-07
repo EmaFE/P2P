@@ -1,15 +1,19 @@
 export function getRelativeTime(date) {
   if (!date) return "";
-
+ 
   const now = Date.now();
 
   let jsDate;
 
-  if (typeof date.toDate === "function") {
-    //firestore timestamp to js date
+//convert firestore timestamp to js Date or use the date directly if already a date
+if (date && typeof date.toDate === "function") {
     jsDate = date.toDate();
-   }
-
+} else if (date instanceof Date) {
+    jsDate = date; 
+} else{
+    console.warn("Invalid date format passed to getRelativeTime:", date);
+    return "";  
+}
   const diff = now - jsDate.getTime();
 
   const seconds = Math.floor(diff / 1000);

@@ -1,24 +1,27 @@
 import React from "react";
-import { Users, MessageSquare, User, HeartHandshake, Menu, X } from "lucide-react";
+import { Users, MessageSquare, User, Menu, X, House } from "lucide-react";
 import { useIsMobile } from "../util/useIsMobile";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button"
 import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent, ComboboxTrigger } from "./ui/combobox"
+import CrisisSupport from "./CrisisSupport";
 
 const NavSideBar = () =>{
 
-   const communities = [
+  const [messagesOpen, setMessagesOpen] = React.useState(false)
+
+  const communities = [
     {title: "Anxiety", url: "/community/anxiety" },
     {title: "Grief", url: "/community/grief" },
     {title: "University Students", url: "/community/universityStudents" }
   ] 
 
   const items = [
-    {title: "Communities", url: "/communities", icon: Users},
-    {title: "Messages", url: "/messages", icon: MessageSquare},
-    {title: "Account", url: "/account", icon: User},
-    {title: "Crisis Support", url: "/crisisSupport", icon:HeartHandshake}
+    {title: "Communities", url: "/communities", icon: Users, type:"link"},
+    {title: "Messages", url: "/messages", icon: MessageSquare, type:"action"},
+    {title: "Account", url: "/account", icon: User, type:"link"},
+    {title: "Home", url:"/", icon:House, type:"link"}
   ]
 
   const isMobile = useIsMobile();
@@ -59,6 +62,15 @@ const NavSideBar = () =>{
                   </ComboboxContent>
                 </Combobox>
               )
+            } else if (item.type === "action"){
+                return(<button key={item.title} size="sm" className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:text-slate-100" onClick={(e) =>{
+                e.preventDefault()
+                console.log(`Clicked on ${item.title}`)
+                setMessagesOpen(true)
+                }}>
+                <item.icon className="h-5 w-5" />
+                <span className="text-sm font-medium">{item.title}</span>
+              </button>)
             }
             return <NavLink
               key={item.title}
@@ -70,8 +82,13 @@ const NavSideBar = () =>{
             </NavLink>
           })
         }
+        {/* {messagesOpenOpen && <CrisisSupport onClose={() => {setCrisisOpen(false)}}/>} */}
       </nav>
-  )
+      
+   )
+
+
+   
 
  if (isMobile) {
     return (
