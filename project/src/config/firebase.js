@@ -1,9 +1,10 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc } from "firebase/firestore"
+import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc} from "firebase/firestore"
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
+import { onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAsxJi3YJ25hCH1yLJj5XUZZ84oz3WlXTo",
@@ -19,6 +20,7 @@ export const auth = getAuth(app)
 export const db = getFirestore(app)
 
 
+
 export async function fetchPosts() {
   const q = query(collection(db, "posts"));
   const snapshot = await getDocs(q);
@@ -31,12 +33,11 @@ export async function fetchPosts() {
       username: data.username,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
-      comments: data.comments ?? [],
+      commentsCount: data.commentsCount ?? 0,
       tags: data.tags ?? [],
       category: data.category ?? null,
       reported: data.reported ?? false,
       community: data.community ?? null,
-    //  bookmarked: data.bookmarked ?? false,
     };
   });
 }
@@ -95,15 +96,15 @@ export async function isLikedByUser(id, userId) {
     return !snapshot.empty;
   }
 
-  export async function isBookmarkedByUser(id, userId){
-    const q = query(
-      collection(db, "bookmarks"),
-      where("postId", "==", id),
-      where("userId", "==", userId)
-    );
-    const snapshot = await getDocs(q);
-    return !snapshot.empty;
-  }
+export async function isBookmarkedByUser(id, userId){
+  const q = query(
+    collection(db, "bookmarks"),
+    where("postId", "==", id),
+    where("userId", "==", userId)
+  );
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+}
 
 export async function handleBookmarkPost(postId, bookmarked, userId) {
   //const postRef = doc(db, "posts", postId);  
@@ -169,6 +170,7 @@ export async function fetchComments(postId) {
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
       reported: data.reported ?? false,
+      commentsCount: data.commentsCount ?? 0,
     //  bookmarked: data.bookmarked ?? false,
     };
   });
@@ -205,7 +207,7 @@ export async function createComment({ postId, username, content, repliedTo, root
     }
   } catch (error) {
     toast.error("Error posting comment. Please try again.");
-    //console.error("Error creating comment: ", error);
+    console.error("Error creating comment: ", error);
   }
 
   return null;
@@ -215,7 +217,6 @@ export async function createPost({ title, content, username, tags, activeCategor
   
   const now = new Date();
   const newPost = {
-    id: Date.now() + Math.random(),
     username: username,
     title: title,
     content: content,
@@ -242,3 +243,11 @@ export async function createPost({ title, content, username, tags, activeCategor
     //console.error("Error creating post: ", error);
   }
 }
+
+export async function getUser(){
+  const currUser = getAuth().currentUser;
+  if(!currUser) return null;
+  const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currUser.uid)));  
+  return userDoc.docs[0]?.data()
+}
+

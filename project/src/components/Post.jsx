@@ -39,6 +39,7 @@ export function buildCommentTree(comments, rootId) {
 }
 
 export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags }) {
+  console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes ?? 0);

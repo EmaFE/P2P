@@ -19,6 +19,7 @@ import Grief from './pages/communities/Grief'
 import Uni from './pages/communities/Uni'
 import { Toaster } from 'sonner'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import Account from './components/Account'
 
 export default function App(){
   return(
@@ -30,10 +31,10 @@ export default function App(){
             <Route path="/" exact element={<Home />}/>
             <Route path="/login" exact element={<LogIn />}/>
             <Route path="/signup" exact element={<SignUp />}/>
-            <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>}/>
             <Route path="/community/anxiety" exact element={<ProtectedRoute><Anxiety /></ProtectedRoute>}/>
             <Route path="/community/grief" exact element={<ProtectedRoute><Grief /></ProtectedRoute>}/>
             <Route path="/community/universityStudents" exact element={<ProtectedRoute><Uni /></ProtectedRoute>}/>
+            <Route path="/account" exact element={<ProtectedRoute><Account /></ProtectedRoute>}/>
           </Routes>
         </Router>
       </AuthProvider>

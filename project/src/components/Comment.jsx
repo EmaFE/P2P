@@ -205,18 +205,11 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
   //replies to comments, not posts
   const handleReplySubmit = async (text) => {
 
+    if (!user) return;
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userDoc.docs[0]?.data()?.username;
+
     await createComment({ postId: comment.id, username: username, content: text, repliedTo: comment.username, rootPostId: rootPostId });
-    
-    // try {
-    //   await createComment({ postId: comment.id, username: username, content: text, repliedTo: comment.username, rootPostId: rootPostId });
-    //   console.log("Reply to post", comment.id, ":", text);
-    //   //toast({ title: "Reply posted!" });
-    // } catch (error) {
-    //   console.error("Error posting reply:", error);
-    //   //toast({ title: "Error", description: "Failed to post reply.", variant: "destructive" });
-    // }
 
     await onCommentsRefresh();
     setReplyTarget(null);

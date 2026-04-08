@@ -27,28 +27,6 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   async function handleCreatePost(post) {
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userDoc.docs[0]?.data()?.username;
-
-    // const now = new Date();
-    // const newPost = {
-    //   id: Date.now() + Math.random(),
-    //   username: username,
-    //   title: post.title,
-    //   content: post.content,
-    //   likes: 0,
-    //   commentsCount: 0,
-    //   tags: post.tags,
-    //   category: activeCategory,
-    //   createdAt: now,
-    //   reported: false,
-    //   community: communityName.toLowerCase(),
-    //   bookmarked: false,
-    // }
-
-    // try {      
-    //   await addDoc(collection(db, "posts"), {
-    //   ...newPost,
-    //   createdAt: serverTimestamp()
-    // });
     try{       
       await createPost({ title: post.title, content: post.content, username: username, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
       const newPosts = await fetchPosts();
@@ -77,7 +55,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 // }, []);
 
   React.useEffect(() => {
-     async function loadPosts() {
+    async function loadPosts() {
     const newPosts = await fetchPosts();
     setPosts(newPosts);
     //console.log("Fetched posts: ", newPosts)
@@ -118,6 +96,10 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   }
 
   const visiblePosts = sortedPosts();
+
+  visiblePosts.map((post) =>{
+    console.log("commentsCount: ", post.commentsCount)
+  })
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
@@ -250,7 +232,6 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
                       likes={post.likes}
                       commentsCount={post.commentsCount}
                       tags={post.tags}
-                      //bookmarkedPost={post.bookmarked}
                     />
                   ))
                 ) : (
