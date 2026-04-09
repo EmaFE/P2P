@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { Heart, MessageCircle, MoreHorizontal, Bookmark, Flag, Share2, ChevronUp, Plus, ChevronDown } from "lucide-react";
 import { getRelativeTime } from "../lib/relative-time";
-import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createComment, isBookmarkedByUser } from "../config/firebase";
+import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createComment, isBookmarkedByUser, getUser } from "../config/firebase";
 import CommentThread from "./Comment";
 import ReplyWindow from "./ReplyWindow";
 import { collection, getDocs, query, where, onSnapshot, doc } from "firebase/firestore";
@@ -39,7 +39,7 @@ export function buildCommentTree(comments, rootId) {
 }
 
 export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags }) {
-  console.log("commentsCount: ", commentsCount)
+  //console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes ?? 0);
@@ -137,9 +137,10 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userDoc.docs[0]?.data()?.username;
-
+    const uid = userDoc.docs[0]?.data()?.uid;
     try {
-      await createComment({ postId: id, username: username, content: text, repliedTo: null, rootPostId: id });
+      await createComment({ postId: id, username: username, uid: uid, content: text, repliedTo: null, rootPostId: id });
+      
       //refresh comments
       const data = await fetchComments(id);
       setCommentsData(data);

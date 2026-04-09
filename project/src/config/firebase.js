@@ -31,6 +31,7 @@ export async function fetchPosts() {
       title: data.title,
       content: data.content,
       username: data.username,
+      uid: data.uid ?? null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
       commentsCount: data.commentsCount ?? 0,
@@ -38,8 +39,8 @@ export async function fetchPosts() {
       category: data.category ?? null,
       reported: data.reported ?? false,
       community: data.community ?? null,
-    };
-  });
+    }
+  })
 }
 
 export async function toggleLikePost(postId, liked, userId) {
@@ -164,6 +165,7 @@ export async function fetchComments(postId) {
     return {
       id: docSnap.id,
       username: data.username,
+      uid: data.uid,
       content: data.content,
       postId: data.postId,
       repliedTo: data.repliedTo || null,
@@ -172,15 +174,16 @@ export async function fetchComments(postId) {
       reported: data.reported ?? false,
       commentsCount: data.commentsCount ?? 0,
     //  bookmarked: data.bookmarked ?? false,
-    };
-  });
+    }
+  })
 }
 
-export async function createComment({ postId, username, content, repliedTo, rootPostId }) {
+export async function createComment({ postId, username, uid, content, repliedTo, rootPostId }) {
   try {
     await addDoc(collection(db, "comments"), {
       postId,
       username,
+      uid,
       content,
       repliedTo,
       createdAt: serverTimestamp(),
@@ -213,11 +216,11 @@ export async function createComment({ postId, username, content, repliedTo, root
   return null;
 }
 
-export async function createPost({ title, content, username, tags, activeCategory, communityName }) {
-  
+export async function createPost({ title, content, username, tags, uid, activeCategory, communityName }) {
   const now = new Date();
   const newPost = {
     username: username,
+    uid: uid,
     title: title,
     content: content,
     likes: 0,
@@ -247,7 +250,119 @@ export async function createPost({ title, content, username, tags, activeCategor
 export async function getUser(){
   const currUser = getAuth().currentUser;
   if(!currUser) return null;
-  const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currUser.uid)));  
+  const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currUser.uid)));
+  console.log(userDoc.docs[0]?.data()?.uid)  
   return userDoc.docs[0]?.data()
+}
+
+export async function fetchPostsByUser (user) {
+  const q = query(collection(db, "posts"), where("uid", "==", user.uid), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      title: data.title,
+      content: data.content,
+      username: data.username,
+      uid: data.uid,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+      likes: data.likes ?? 0,
+      commentsCount: data.commentsCount ?? 0,
+      tags: data.tags ?? [],
+      category: data.category ?? null,
+      reported: data.reported ?? false,
+      community: data.community ?? null,
+    }
+  });
+}
+
+export async function fetchCommentsByUser (user) {
+  const q = query(collection(db, "comments"), where("uid", "==", user.uid), orderBy("createdAt", "desc"))
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) =>{
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      username: data.username,
+      uid: data.uid,
+      content: data.content,
+      postId: data.postId,
+      repliedTo: data.repliedTo || null,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+      likes: data.likes ?? 0,
+      reported: data.reported ?? false,
+      commentsCount: data.commentsCount ?? 0,
+    }
+  })
+}
+
+export async function fetchLikesByUser (user) {
+  const q = query(collection(db, "likes"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return {
+      id:docSnap.id,
+      uid: data.userId,
+      postId: data.postId,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+    }
+  });
+}
+
+export async function fetchBookmarksByUser(user) {
+  const q = query(collection(db, "bookmarks"), where("userId", "==", user.uid), orderBy("createdAt", "desc"))
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) =>{
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      uid: data.userId,
+      postId: data.postId,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+    }
+  })
+}
+
+export async function fetchPostById (id) {
+  const postDoc = await getDoc(doc(db, "posts", id)); 
+  const commDoc = await getDoc(doc(db, "comments", id));
+  
+  if(postDoc) {
+    const data = postDoc.data();
+    //console.log("post doc data: ",data);
+    return {
+      id: postDoc.id,
+      title: data.title,
+      content: data.content,
+      username: data.username,
+      uid: data.uid,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+      likes: data.likes ?? 0,
+      commentsCount: data.commentsCount ?? 0,
+      tags: data.tags ?? [],
+      category: data.category ?? null,
+      reported: data.reported ?? false,
+      community: data.community ?? null,
+    }
+  } else if (commDoc){
+    const data = commDoc.data();
+      console.log("comm doc data: ",data);
+      return {
+        id: postDoc.id,
+        title: data.title ?? null,
+        content: data.content,
+        username: data.username,
+        uid: data.uid,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+        likes: data.likes ?? 0,
+        commentsCount: data.commentsCount ?? 0,
+        tags: data.tags ?? [],
+        category: data.category ?? null,
+        reported: data.reported ?? false,
+        community: data.community ?? null,
+      } 
+  } else return null
 }
 

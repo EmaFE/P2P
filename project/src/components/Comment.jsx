@@ -208,8 +208,10 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
     if (!user) return;
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userDoc.docs[0]?.data()?.username;
+    const uid = userDoc.docs[0]?.data()?.uid;
+    console.log(uid)
 
-    await createComment({ postId: comment.id, username: username, content: text, repliedTo: comment.username, rootPostId: rootPostId });
+    await createComment({ postId: comment.id, uid: uid, username: username, content: text, repliedTo: comment.username, rootPostId: rootPostId });
 
     await onCommentsRefresh();
     setReplyTarget(null);

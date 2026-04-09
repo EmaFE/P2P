@@ -89,7 +89,7 @@ function UpdateEmail({ user }) {
   };
 
   return (
-    <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal)}}>
+    <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal);}}>
       <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-card-foreground hover:bg-accent/50 transition-colors">
         <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> Update Email</span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />

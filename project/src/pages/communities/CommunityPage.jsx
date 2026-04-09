@@ -27,8 +27,9 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   async function handleCreatePost(post) {
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const username = userDoc.docs[0]?.data()?.username;
+    const uid = userDoc.docs[0]?.data()?.uid
     try{       
-      await createPost({ title: post.title, content: post.content, username: username, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
+      await createPost({ title: post.title, content: post.content, username: username, uid: uid, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
       const newPosts = await fetchPosts();
       setPosts(newPosts);
      // console.log("new posts: ", newPosts)
@@ -56,13 +57,12 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 
   React.useEffect(() => {
     async function loadPosts() {
-    const newPosts = await fetchPosts();
-    setPosts(newPosts);
+      const newPosts = await fetchPosts();
+      setPosts(newPosts);
     //console.log("Fetched posts: ", newPosts)
-  }
-
-  loadPosts();
-}, []);
+    }
+    loadPosts();
+  }, []);
 
   const filteredPosts = () =>{  
     return posts.filter((post) => {
@@ -97,9 +97,9 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 
   const visiblePosts = sortedPosts();
 
-  visiblePosts.map((post) =>{
-    console.log("commentsCount: ", post.commentsCount)
-  })
+  // visiblePosts.map((post) =>{
+  //   console.log("commentsCount: ", post.commentsCount)
+  // })
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
