@@ -13,7 +13,7 @@ const COLLAPSED_REPLY_LIMIT = 4;
 const MAX_CONTENT_LENGTH = 50;
 
 
-function CommentItem({ comment, onReplyClick }) {
+function CommentItem({ comment, onReplyClick, rootPostId }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes ?? 0);
   const [expanded, setExpanded] = useState(false);
@@ -46,8 +46,10 @@ function CommentItem({ comment, onReplyClick }) {
   const { user } = useAuth();
   React.useEffect( () =>{
     if (!comment.id || !user?.uid) return;
+    console.log("COMM bookmark postId: ", comment.id)
+    console.log("COMM bookmark userId: ", user.uid)
     const check = async () =>{
-      const resultB = await isBookmarkedByUser(comment.id, user.uid);
+      const resultB = await isBookmarkedByUser(comment.id, user.uid, "comment");
       setBookmarked(resultB);
     }
     check();
@@ -111,7 +113,7 @@ function CommentItem({ comment, onReplyClick }) {
       query(collection(db, "users"), where("uid", "==", user.uid))
     );
     const userId = userDoc.docs[0]?.data()?.uid;
-    await handleBookmarkComment(comment.id, !bookmarked, userId);
+    await handleBookmarkComment(comment.id, !bookmarked, rootPostId, userId);
   };
 
   return (
@@ -219,7 +221,7 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
 
   return (
     <div className="py-1.5">
-      <CommentItem comment={comment} onReplyClick={() => setReplyTarget(comment)} />
+      <CommentItem comment={comment} onReplyClick={() => setReplyTarget(comment)} rootPostId={rootPostId} />
 
       {hasReplies && (
         <div className="mt-1">

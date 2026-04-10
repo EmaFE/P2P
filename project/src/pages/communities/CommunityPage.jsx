@@ -22,6 +22,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   const [selectedSort, setSelectedSort] = useState("Newest");
   const [posts, setPosts] = useState([]);
   const [isNewPost, setIsNewPost] = useState(false);
+  const [isUserPressed, setUserPressed] = useState(null);
 
   
   async function handleCreatePost(post) {
@@ -66,20 +67,29 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 
   const filteredPosts = () =>{  
     return posts.filter((post) => {
-
+  
       const communityMatch = post.community === communityName.toLowerCase();
       const categoryMatch = post.category && post.category.toLowerCase() === activeCategory.toLowerCase()
-      
       //i want posts to match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
-      const filterMatch = selectedFilters.length === 0 || selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
+      const filterMatchPosts = 
+        selectedFilters.length === 0 || 
+        selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
+      
+      const filterMatchUser = !isUserPressed || post.username.trim().toLowerCase() === isUserPressed.trim().toLowerCase()
+      
+      // console.log("post username", post.username)
+      // console.log("state username: ", isUserPressed)
+      // console.log(filterMatchUser)
+      // console.log("isUserPressed:", isUserPressed, typeof isUserPressed);
 
-      return categoryMatch && filterMatch && communityMatch;
+      return categoryMatch && filterMatchPosts && communityMatch && filterMatchUser;
     })
   } 
 
 
   //sort by newest as default, so if no sort is selected, sort by newest
-  const sortedPosts = () =>{
+    const sortedPosts = () =>{
+      //console.log(filteredPosts())
     return filteredPosts().sort((a, b) =>{
       if(selectedSort === "Most Liked"){
         return b.likes - a.likes;
@@ -114,6 +124,10 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
     setSelectedSort((prev) =>{
       return prev == option ? "Newest" : option
     })
+  }
+
+  const onUserClick = (username) =>{
+    setUserPressed(username);
   }
 
   return(
@@ -219,6 +233,11 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
           <ScrollArea className="flex flex-1 p-4 md:p-4">
             
             <div className="max-w-3xl mx-auto w-full space-y-3">
+              {isUserPressed && (
+                <button className="cursor-pointer" onClick={() => setUserPressed(null)}>
+                  Go back to main page
+                </button>
+              )}
               {
                 visiblePosts.length > 0 ? (
                   visiblePosts.map((post) =>(
@@ -232,6 +251,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
                       likes={post.likes}
                       commentsCount={post.commentsCount}
                       tags={post.tags}
+                      onUserClick={onUserClick}
                     />
                   ))
                 ) : (

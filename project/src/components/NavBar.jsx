@@ -34,7 +34,7 @@ const NavBar = () =>{
       <div className='hidden md:flex gap-5 justify-center'>
         <RefNav name="Communities"/>
         <RefNav name="About Us"/>
-        <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl' onClick={() =>{navigate("/login")}} >Account</button>
+        <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl' onClick={() =>{navigate("/account")}} >Account</button>
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
         onClick={ (e) =>{
           e.preventDefault()

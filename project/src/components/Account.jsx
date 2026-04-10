@@ -33,13 +33,15 @@ export default function Account () {
             My Account
           </h1>
           <div className="flex-1">
-            <Tabs defaultValue="settings" className="w-full">
+            <Tabs defaultValue="activity" className="w-full">
               <TabsList className=" w-full ">
-                <TabsTrigger value="settings" className="gap-1.5 ">
-                  <Settings className="h-4 w-4">Account Settings</Settings>
-                </TabsTrigger>
                 <TabsTrigger value="activity" className="gap-1.5">
                   <Activity className="h-4 w-4">My Activity</Activity>
+                  <label>My Activity</label>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="gap-1.5 ">
+                  <Settings className="h-4 w-4">Account Settings</Settings>
+                  <label>Account Settings</label>
                 </TabsTrigger>
               </TabsList>
 

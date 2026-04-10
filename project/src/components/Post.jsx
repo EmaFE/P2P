@@ -38,7 +38,7 @@ export function buildCommentTree(comments, rootId) {
   return roots;
 }
 
-export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags }) {
+export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, onUserClick }) {
   //console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -53,8 +53,8 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   const needsTruncation = content.length > MAX_CONTENT_LENGTH;
   const displayContent = !expanded && needsTruncation ? content.slice(0, MAX_CONTENT_LENGTH) + "…" : content;
-  const needsTagExpand = tags.length > TAG_EXPAND_THRESHOLD ? true : false;
-  const visibleTags = tagsExpanded ? tags : tags.slice(0, MAX_VISIBLE_TAGS);
+  const needsTagExpand = tags?.length > TAG_EXPAND_THRESHOLD ? true : false;
+  const visibleTags = tagsExpanded ? tags : tags?.slice(0, MAX_VISIBLE_TAGS);
   
    const commentTree = commentsData ? buildCommentTree(commentsData, id) : null;
    //console.log(JSON.stringify(commentTree, null, 2));
@@ -89,7 +89,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   React.useEffect( () =>{
     if (!id || !user?.uid) return;
     const check = async () =>{
-      const resultB = await isBookmarkedByUser(id, user.uid);
+      const resultB = await isBookmarkedByUser(id, user.uid, "post");
       setBookmarked(resultB);
     }
     check();
@@ -172,6 +172,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
     reportPost(id);
   };
 
+
   
   return (
     <Card className="w-full max-w-xl">
@@ -182,7 +183,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
         </div>
 
         <div className="mt-1 flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">@{username}</span>
+          <span className="text-sm text-muted-foreground cursor-pointer" onClick={() => onUserClick(username)}>@{username}</span>
         </div> 
       </CardHeader>
 
@@ -255,7 +256,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
           </div>
         </div>
 
-        {tags.length > 0 && (
+        {tags?.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
             {visibleTags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">

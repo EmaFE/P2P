@@ -2,8 +2,8 @@ import React from 'react'
 
 const CrisisSupport = ({onClose}) =>{
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-      <div className="absolute inset-0 z-[9999] bg-black/20 backdrop-blur-xs"
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-xs bg-black/10">
+      <div className="absolute inset-0 z-[9999]  "
         onClick={onClose}
       />
 
