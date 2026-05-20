@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { Heart, MessageCircle, MoreHorizontal, Bookmark, Flag, Share2, ChevronUp, Plus, ChevronDown } from "lucide-react";
 import { getRelativeTime } from "../lib/relative-time";
-import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createComment, isBookmarkedByUser, getUser } from "../config/firebase";
+import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createPost, createComment, isBookmarkedByUser, getUser } from "../config/firebase";
 import CommentThread from "./Comment";
 import ReplyWindow from "./ReplyWindow";
 import { collection, getDocs, query, where, onSnapshot, doc } from "firebase/firestore";
@@ -28,8 +28,8 @@ export function buildCommentTree(comments, rootId) {
 
   //link children to parent posrts
   comments.forEach(comment => {
-    if (comment.postId !== rootId && map[comment.postId]) {
-      map[comment.postId]?._replies.push(map[comment.id]);
+    if (comment.parenttId !== rootId && map[comment.parentId]) {
+      map[comment.parentId]?._replies.push(map[comment.id]);
     } else {
       roots.push(map[comment.id]);
     }
@@ -38,7 +38,7 @@ export function buildCommentTree(comments, rootId) {
   return roots;
 }
 
-export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, onUserClick }) {
+export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, category, onUserClick }) {
   //console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -136,10 +136,10 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const handlePostReplySubmit = async (text) => {
 
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-    const username = userDoc.docs[0]?.data()?.username;
+    const userName = userDoc.docs[0]?.data()?.username;
     const uid = userDoc.docs[0]?.data()?.uid;
     try {
-      await createComment({ postId: id, username: username, uid: uid, content: text, repliedTo: null, rootPostId: id });
+      await createComment({ parentId: id, username: userName, uid: uid, content: text, repliedTo: username, postId: id });
       
       //refresh comments
       const data = await fetchComments(id);
@@ -171,6 +171,10 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const handleReport = async () => {
     reportPost(id);
   };
+
+  const handlePostfromReflection = async () => {
+    await createPost({ title: title, content:content, username: username, uid: user.uid, tags: tags, activeCategory: "general", communityName: "anxiety" })
+  }
 
 
   
@@ -220,6 +224,13 @@ export default function Post({ id, title, content, username, createdAt, likes, c
             <Plus className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Comment</span>
           </Button>
+
+          { category.toLowerCase() === "reflections" && (
+            <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handlePostfromReflection}>
+              <Plus className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Post</span>
+            </Button>
+          )}
 
           <div className="ml-auto flex items-center gap-1">
             <Button
@@ -287,7 +298,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
                  key={comment.id}
                  comment={comment}
                  replies={comment._replies || []}
-                 rootPostId={id}
+                 postId={id}
                  onCommentsRefresh={async () => {
                    const data = await fetchComments(id);
                    setCommentsData(data);

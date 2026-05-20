@@ -35,7 +35,7 @@ const Communitycard = ({name, description, route}) =>{
       <button 
         className='font-bold text-md text-white rounded-lg border border-slate-300 bg-[var(--color-six)] px-3 py-1 md:px-5 md:py-3 mt-7 opacity-100
         cursor-pointer hover:bg-[var(--color-eight)]/70 hover:shadow-md hover:text-black decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
-        onClick={() => navigate(route)}
+        onClick={() => navigate(user ? route : "/signUp")}
       >
         {user ? "Enter" : "Join"}
       </button>

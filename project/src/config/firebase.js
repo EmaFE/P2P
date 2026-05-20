@@ -7,19 +7,50 @@ import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
 
 
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
 
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 
+export async function fetchPosts(category, user) {
+  let q;
+  category = category.toLowerCase();
+  console.log("fetch posts from firbease called: ", category, user.uid)
+
+  if (category === "reflections") {
+    q = query(
+      collection(db, "posts"),
+      where("category", "==", "reflections"),
+      where("uid", "==", user.uid),
+    );
+  } else {
+    q = query(
+      collection(db, "posts"),
+      where("category", "!=", "reflections")
+    );
+  }
 
 
-export async function fetchPosts() {
-  const q = query(collection(db, "posts"));
-  const snapshot = await getDocs(q);
+  try{
+    const snapshot = await getDocs(q);
+  // console.log("DOC COUNT:", snapshot.size);
+
+  // snapshot.forEach((doc) => {
+  //   console.log(doc.id, doc.data());
+  // });
+
   return snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
+
     return {
       id: docSnap.id,
       title: data.title,
@@ -33,13 +64,26 @@ export async function fetchPosts() {
       category: data.category ?? null,
       reported: data.reported ?? false,
       community: data.community ?? null,
-    }
-  })
+    };
+  });
+
+  }
+  catch (error){
+    console.log("error fetching posts: ", error)
+  }
+  
 }
 
 export async function toggleLikePost(postId, liked, userId) {
   //console.log("post id from firebase.js: " + postId + typeof postId)
   const postRef = doc(db, "posts", postId);  
+  const postSnap = await getDoc(postRef);
+
+  //this is for "my likes" page where we want the like to be removed when the comment is expnaded
+  if (!postSnap.exists()) {
+    toggleLikeComment(postId, liked, userId);
+    return;
+  }
   await updateDoc(postRef, { likes: increment(liked ? 1 : -1) });
   
   if (liked) {
@@ -78,7 +122,7 @@ export async function toggleLikeComment(commentId, liked, userId) {
        await Promise.all(snapshot.docs.map(docSnap => deleteDoc(doc(collection(db, "likes"), docSnap.id))));
     //});
   }
- // console.log("Successfully updated like status");
+  console.log("Successfully updated like status");
 }
 
 export async function isLikedByUser(id, userId) {
@@ -94,14 +138,27 @@ export async function isLikedByUser(id, userId) {
 export async function isBookmarkedByUser(id, userId, type){
   console.log("bookmark postId: ", id)
   console.log("bookmark userId: ", userId)
-  const q = query(
+  if(type === "post"){
+    const q = query(
     collection(db, "bookmarks"),
     where("postId", "==", id),
+    where("userId", "==", userId),
+    where("commentId", "==", null)
+  );
+    const snapshot = await getDocs(q);
+    console.log(snapshot.docs.map(doc => doc.data()));
+    return !snapshot.empty;
+  } else if (type === "comment"){
+    const q = query(
+    collection(db, "bookmarks"),
+    where("commentId", "==", id),
     where("userId", "==", userId)
   );
-  const snapshot = await getDocs(q);
-  console.log(snapshot.docs.map(doc => doc.data()));
-  return !snapshot.empty;
+    const snapshot = await getDocs(q);
+    console.log(snapshot.docs.map(doc => doc.data()));
+    return !snapshot.empty;
+  }
+  
 }
 
 export async function handleBookmarkPost(postId, bookmarked, userId) {
@@ -111,7 +168,7 @@ export async function handleBookmarkPost(postId, bookmarked, userId) {
   //console.log("post id from firebase.js: " + postId + "bookmarked: " + postRef.bookmarked + "BEFORE UPDATE")
  // await updateDoc(postRef, { bookmarked: bookmarked });
   if (bookmarked){
-    await addDoc(collection(db, "bookmarks"), { postId: postId, userId: userId, createdAt: serverTimestamp()});
+    await addDoc(collection(db, "bookmarks"), {commentId: null, postId: postId, userId: userId, createdAt: serverTimestamp()});
     toast.success("Post bookmarked!");
    // console.log("post id from firebase.js: " + postId + "bookmarked: " + postRef.bookmarked + "AFTER UPDATE")
   }else {
@@ -130,16 +187,16 @@ export async function handleBookmarkPost(postId, bookmarked, userId) {
   }
 }
 
-export async function handleBookmarkComment(commentId, bookmarked, rootPostId, userId) {
+export async function handleBookmarkComment(commentId, bookmarked, postId, userId) {
  // console.log("comment id from firebase.js: " + commentId + typeof commentId)
  // const commentRef = doc(db, "comments", commentId);
  // await updateDoc(commentRef, { bookmarked: bookmarked });
   if (bookmarked){
-    await addDoc(collection(db, "bookmarks"), { postId: commentId, rootPostId: rootPostId, userId: userId, createdAt: serverTimestamp()});
+    await addDoc(collection(db, "bookmarks"), { commentId: commentId, postId: postId, userId: userId, createdAt: serverTimestamp()});
     toast.success("Comment bookmarked!");
   }else {
     const q = query(collection(db, "bookmarks"),
-              where("postId", "==", commentId),
+              where("commentId", "==", commentId),
               where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
     for (const docSnap of querySnapshot.docs) {
@@ -159,7 +216,7 @@ export async function reportPost(postId) {
 export async function fetchComments(postId) {
   const q = query(
     collection(db, "comments"),
-    where("rootPostId", "==", postId),
+    where("postId", "==", postId),
     orderBy("createdAt", "desc")
   );
   const snapshot = await getDocs(q);
@@ -170,22 +227,22 @@ export async function fetchComments(postId) {
       username: data.username,
       uid: data.uid,
       content: data.content,
-      postId: data.postId,
+      parentId: data.parentId,
       repliedTo: data.repliedTo || null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
       reported: data.reported ?? false,
       commentsCount: data.commentsCount ?? 0,
-      rootPostId: data.rootPostId ?? ""
+      postId: data.postId ?? ""
     //  bookmarked: data.bookmarked ?? false,
     }
   })
 }
 
-export async function createComment({ postId, username, uid, content, repliedTo, rootPostId }) {
+export async function createComment({ parentId, username, uid, content, repliedTo, postId }) {
   try {
     await addDoc(collection(db, "comments"), {
-      postId,
+      parentId,
       username,
       uid,
       content,
@@ -194,12 +251,12 @@ export async function createComment({ postId, username, uid, content, repliedTo,
       likes: 0,
       reported: false,
       commentsCount: 0,
-      rootPostId,
+      postId,
       //bookmarked: false,
     });
     toast.success("Comment posted successfully!");
     //increment comment count on the post from posts or comments
-    const postRef = doc(db, "posts", rootPostId);
+    const postRef = doc(db, "posts", postId);
     const postSnap = await getDoc(postRef);
 
     if (postSnap.exists()) {
@@ -247,7 +304,7 @@ export async function createPost({ title, content, username, tags, uid, activeCa
     toast.success("Post created successfully!");
   } catch (error) {
     toast.error("Error creating post. Please try again.");
-    //console.error("Error creating post: ", error);
+    console.error("Error creating post: ", error);
   }
 }
 
@@ -257,6 +314,10 @@ export async function getUser(){
   const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currUser.uid)));
   console.log(userDoc.docs[0]?.data()?.uid)  
   return userDoc.docs[0]?.data()
+}
+
+export async function getUserName(){
+  getUser()?.username;
 }
 
 export async function fetchPostsByUser (user) {
@@ -291,13 +352,13 @@ export async function fetchCommentsByUser (user) {
       username: data.username,
       uid: data.uid,
       content: data.content,
-      postId: data.postId,
+      parentId: data.parentId,
       repliedTo: data.repliedTo || null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
       reported: data.reported ?? false,
       commentsCount: data.commentsCount ?? 0,
-      rootPostId: data.rootPostId,
+      postId: data.postId,
     }
   })
 }
@@ -326,6 +387,7 @@ export async function fetchBookmarksByUser(user) {
     return {
       id: docSnap.id,
       uid: data.userId,
+      commentId: data.commentId ?? "",
       postId: data.postId,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
     }
@@ -342,11 +404,14 @@ export async function fetchPostById (id) {
       content: data.content,
       username: data.username,
       uid: data.uid,
+      parentId: data.parentId ?? "",
+      postId: data.postId ?? "",
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
       commentsCount: data.commentsCount ?? 0,
       reported: data.reported ?? false,
       community: data.community ?? null,
+      isComment: true,
     }
    } else {
       const postDoc = await getDoc(doc(db, "posts", id)); 
@@ -391,3 +456,81 @@ export async function fetchCommentById (id) {
     }
 }
 
+export async function deleteComment (commentId, postId){
+  try {
+    const commentRef = doc(db, "comments", commentId);
+    await updateDoc(commentRef, {
+      content: "[deleted]",
+      username: "[deleted]",
+      deleted: true,
+    });
+
+    toast.success("Comment deleted successfully!");
+
+    //decrement comment count on the post from posts or comments
+    const postRef = doc(db, "posts", postId)
+    const postSnap = await getDoc(postRef)
+    if(postSnap.exists()){
+      await updateDoc(postRef, {commentsCount: increment(-1)});
+    }
+  }
+  catch (error){
+    toast.error("Could not delete comment. Please try again.")
+    console.error("error deleting comment: ", error)
+  }
+}
+
+export async function deleteBookmark (bookmarkId){
+  try {
+    const bookmarkRef = doc(db, "bookmarks", bookmarkId);
+    await deleteDoc(bookmarkRef);
+    toast.success("Bookmark deleted successfully!");
+  }
+  catch (error){
+    toast.error("Could not delete bookmark. Please try again.")
+    console.error("error deleting bookmark: ", error)
+  }
+}
+
+export async function deletePost (postId){
+  try {
+    const postRef = doc(db, "posts", postId);
+    await updateDoc(postRef, {
+      content: "[deleted]",
+      username: "[deleted]",
+      deleted: true,
+    });
+
+    toast.success("Post deleted successfully!");
+  }
+  catch (error){
+    toast.error("Could not delete post. Please try again.")
+    console.error("error deleting post: ", error)
+  }
+}
+
+export async function deleteLike (likeId, postId){
+  try {
+    const likeRef = doc(db, "likes", likeId);
+    await deleteDoc(likeRef);
+
+    toast.success("Like deleted successfully!");
+
+    //decrement like count from post or comment
+    const postRef = doc(db, "posts", postId)
+    const postSnap = await getDoc(postRef)
+    if(postSnap.exists()){
+      await updateDoc(postRef, {likes: increment(-1)});
+    } else {
+      const commentRef = doc(db, "comments", postId)
+      const postSnap = await getDoc(commentRef)
+      if(postSnap.exists()){
+        await updateDoc(commentRef, {likes: increment(-1)});
+      }
+    }
+  }
+  catch (error){
+    toast.error("Could not delete like from post. Please try again.")
+    console.error("error deleting like: ", error)
+  }
+}

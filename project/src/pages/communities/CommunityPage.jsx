@@ -1,5 +1,5 @@
 import { Filter, Plus} from "lucide-react";
-import React, { useState } from "react";
+import React, { act, useState } from "react";
 import { SheetContent, SheetTrigger, Sheet } from "../../components/ui/sheet";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Button } from "../../components/ui/button";
@@ -9,9 +9,9 @@ import Post from "../../components/Post";
 import NewPostWindow from "../../components/NewPostWindow";
 import FilterSortSideBar from "../../components/FilterSortSideBar";
 import { useAuth } from "@/util/authContext";
+import { onAuthStateChanged } from "firebase/auth"
 import { collection, getDocs, onSnapshot, query, addDoc, where, serverTimestamp} from "firebase/firestore";
-import { db, fetchPosts, createPost } from "../../config/firebase";
-import { toast } from "sonner";
+import { db, fetchPosts, createPost, auth} from "../../config/firebase";
 
 const CommunityPage = ({communityName, description, categories, filterOptions, sortOptions}) =>{
 
@@ -41,36 +41,49 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   }
 
 
+  // React.useEffect(() => {
+  //   async function loadPosts() {
+  //     const newPosts = await fetchPosts();
+  //     setPosts(newPosts);
+  //   //console.log("Fetched posts: ", newPosts)
+  //   }
+  //   loadPosts();
+  // }, []);
+
 //   React.useEffect(() => {
-//   const postsRef = collection(db, "posts");
-
-//   const unsubscribe = onSnapshot(postsRef, (snapshot) => {
-//     const postsData = snapshot.docs.map((doc) => ({
-//       ...doc.data(),
-//       firestoreId: doc.id,
-//     }));
-
-//     setPosts(postsData);
+//   const unsubscribe = onAuthStateChanged(auth, (user) => {
+//     if (user) {
+//       fetchPosts(activeCategory, user).then(setPosts);
+//     }
 //   });
 
-//   return () => unsubscribe(); //cleanup
+//   return () => unsubscribe(); //cleanup on unmount
 // }, []);
 
-  React.useEffect(() => {
-    async function loadPosts() {
-      const newPosts = await fetchPosts();
-      setPosts(newPosts);
-    //console.log("Fetched posts: ", newPosts)
-    }
-    loadPosts();
-  }, []);
+React.useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    const posts = await fetchPosts(activeCategory, user);
+    setPosts(posts);
+  });
+
+  return () => unsubscribe();
+}, [activeCategory]);
 
   const filteredPosts = () =>{  
     return posts.filter((post) => {
   
       const communityMatch = post.community === communityName.toLowerCase();
+
       const categoryMatch = post.category && post.category.toLowerCase() === activeCategory.toLowerCase()
-      //i want posts to match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
+
+       //block private posts (from reflections in anxiety) from other users
+      const isPrivate = post.category?.toLowerCase() === "reflections";
+      const isOwnPost = post.uid === user.uid;
+      if (isPrivate && !isOwnPost) return false;
+
+      //posts match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
       const filterMatchPosts = 
         selectedFilters.length === 0 || 
         selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
@@ -158,7 +171,6 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
                 ))
               }
               </div>
-
               <div className="flex items-center gap-2">
                 {
                   isMobile && (
@@ -251,6 +263,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
                       likes={post.likes}
                       commentsCount={post.commentsCount}
                       tags={post.tags}
+                      category={post.category}
                       onUserClick={onUserClick}
                     />
                   ))
@@ -284,6 +297,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
         onSubmit={handleCreatePost}
         categories={categories}
         tagOptions={filterOptions}
+        activeCategory={activeCategory}
       />
     </div>
   )

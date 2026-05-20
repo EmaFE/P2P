@@ -64,7 +64,7 @@ const Home = () =>{
               {!user && <button 
                 className='cursor-pointer px-4 py-1 mr-2 bg-[var(--color-six)] text-white rounded-lg border border-transparent mb-4
                 hover:border-slate-200 hover:bg-[var(--color-eight)]/70 hover:shadow-md hover:text-slate-600 decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/signUp")}
                 >
                   Join us
               </button> }

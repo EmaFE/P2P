@@ -13,7 +13,7 @@ const COLLAPSED_REPLY_LIMIT = 4;
 const MAX_CONTENT_LENGTH = 50;
 
 
-function CommentItem({ comment, onReplyClick, rootPostId }) {
+function CommentItem({ comment, onReplyClick, postId }) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes ?? 0);
   const [expanded, setExpanded] = useState(false);
@@ -50,6 +50,7 @@ function CommentItem({ comment, onReplyClick, rootPostId }) {
     console.log("COMM bookmark userId: ", user.uid)
     const check = async () =>{
       const resultB = await isBookmarkedByUser(comment.id, user.uid, "comment");
+      console.log("await isBookmarkedByUser(comment.id, user.uid, comment : ", await isBookmarkedByUser(comment.id, user.uid, "comment"))
       setBookmarked(resultB);
     }
     check();
@@ -113,7 +114,7 @@ function CommentItem({ comment, onReplyClick, rootPostId }) {
       query(collection(db, "users"), where("uid", "==", user.uid))
     );
     const userId = userDoc.docs[0]?.data()?.uid;
-    await handleBookmarkComment(comment.id, !bookmarked, rootPostId, userId);
+    await handleBookmarkComment(comment.id, !bookmarked, postId, userId);
   };
 
   return (
@@ -197,7 +198,7 @@ function CommentItem({ comment, onReplyClick, rootPostId }) {
   );
 }
 
-export default function CommentThread({ comment, rootPostId, replies, onCommentsRefresh }) {
+export default function CommentThread({ comment, postId, replies, onCommentsRefresh }) {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
@@ -213,7 +214,7 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
     const uid = userDoc.docs[0]?.data()?.uid;
     console.log(uid)
 
-    await createComment({ postId: comment.id, uid: uid, username: username, content: text, repliedTo: comment.username, rootPostId: rootPostId });
+    await createComment({ parentId: comment.id, uid: uid, username: username, content: text, repliedTo: comment.username, postId: postId });
 
     await onCommentsRefresh();
     setReplyTarget(null);
@@ -221,7 +222,7 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
 
   return (
     <div className="py-1.5">
-      <CommentItem comment={comment} onReplyClick={() => setReplyTarget(comment)} rootPostId={rootPostId} />
+      <CommentItem comment={comment} onReplyClick={() => setReplyTarget(comment)} postId={postId} />
 
       {hasReplies && (
         <div className="mt-1">
@@ -254,7 +255,7 @@ export default function CommentThread({ comment, rootPostId, replies, onComments
                  key={comment.id}
                  comment={comment}
                  replies={comment._replies || []}
-                 rootPostId={rootPostId}
+                 postId={postId}
                  onCommentsRefresh={onCommentsRefresh}
                />
              ))}

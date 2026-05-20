@@ -4,24 +4,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Settings, Activity } from "lucide-react";
 import  MyActivity  from "./MyActivity";
 import  AccountSettings  from "./AccountSettings";
-import { getUser } from "@/config/firebase";
+import { getUser, getUserName } from "@/config/firebase";
 import { Context } from "../util/authContext"
 import NavSideBar from "./NavSideBar";
 
-
 export default function Account () {
+
   const { user } = React.useContext(Context);
+  const [username, setUsername] = React.useState("");
 
   React.useEffect(() => {
-    if (!user) return;
-
-    const fetchData = async () => {
-      const data = await getUser(user);
-      //console.log(data);
+    const fetchUsername = async () => {
+      const user = await getUser();
+      setUsername(user?.username);
     };
-
-    fetchData();
-  }, [user]);
+    fetchUsername();
+  }, []);
   
   return ( 
     <div className="min-h-screen flex">
@@ -32,6 +30,7 @@ export default function Account () {
           <h1 className="text-2xl font-bold text-foreground">
             My Account
           </h1>
+          <h3>Hi {username}!</h3>
           <div className="flex-1">
             <Tabs defaultValue="activity" className="w-full">
               <TabsList className=" w-full ">

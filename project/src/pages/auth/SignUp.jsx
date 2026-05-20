@@ -7,8 +7,11 @@ import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from "../../config/firebase"
-import { createUserWithEmailAndPassword, signOut } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { Checkbox } from "@/components/ui/checkbox"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 
 const SignUp = () =>{
@@ -23,56 +26,96 @@ const SignUp = () =>{
   const [passwordCheck, setPasswordCheck] = React.useState('')
   const [error, setError] = React.useState('')
   const [username, setUsername] = React.useState('')
+  const [termsAccepted, setTermsAccepted] = React.useState(false)
+  const [termsOpen, setTermsOpen] = React.useState(false)
 
   let navigate = useNavigate()
 
 
   const handleSignUp = async (e) =>{
     e.preventDefault()
-    setError('')  
+  
+     if (!termsAccepted) {
+      setError("Please accept the terms and conditions to sign up.")
+    } else{
+        
+        setError('')  
 
-    if(!validateEmail(email)){
-      setError("Please enter a valid email address.")
-      return;
-    }
+        if(!validateEmail(email)){
+          setError("Please enter a valid email address.")
+          return;
+        }
 
-    if(!password){
-      setError("Please enter a password.")
-      return;
-    }
+        if(!password){
+          setError("Please enter a password.")
+          return;
+        }
 
-    if(password.length < 6){
-      setError("Please enter a password of at least 6 characters")
-      return;
-    }
+        if(password.length < 6){
+          setError("Please enter a password of at least 6 characters")
+          return;
+        }
 
-    if(!passwordCheck){
-      setError("Please confirm your password.")
-      return;
-    }
+        if(!passwordCheck){
+          setError("Please confirm your password.")
+          return;
+        }
 
-    if(!checkPassword(password, passwordCheck)){
-      setError("Confirmed password does not match.")
-      return;
-    }
+        if(!checkPassword(password, passwordCheck)){
+          setError("Confirmed password does not match.")
+          return;
+        }
 
-    if(username === ''){
-      setError("Please generate a username")
-      return;
-    }
+        if(username === ''){
+          setError("Please generate a username")
+          return;
+        }
 
-    try{
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        username: username,
-        email: email,
-        createdAt: serverTimestamp(),
-      });
-      navigate("/")
-    } catch(error){
-      console.error(error)
+        try{
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+          await setDoc(doc(db, "users", userCredential.user.uid), {
+            uid: userCredential.user.uid,
+            username: username,
+            email: email,
+            createdAt: serverTimestamp(),
+          });
+          navigate("/")
+        } catch(error){
+          console.error(error)
+        }
     }
+    
+  }
+
+  const signInWithGoogle = async (event) =>{
+    event.preventDefault()
+    if (!termsAccepted){
+      setError("Please accept the terms and conditions to sign up.")
+    } else{
+        try{
+          const provider = new GoogleAuthProvider();
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+
+          //check if user already exists in firestore
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+
+          if (!userDoc.exists()) {
+            //first time => generate username and create document
+            const randomUsername = generateRandomUsername();
+            await setDoc(doc(db, "users", user.uid), {
+              uid: user.uid,
+              email: user.email,
+              username: randomUsername,
+              createdAt: serverTimestamp(),
+            });
+          }
+        } catch(error){
+            console.log("Error signing in with Google:",error);
+        } finally{
+            navigate("/")
+        }
+      }
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -85,6 +128,11 @@ const SignUp = () =>{
   const changeUsername = (e) =>{
     e.preventDefault()
     setUsername(generateRandomUsername())
+  }
+
+  const openTerms = (e) =>{
+    e.preventDefault()
+    setTermsOpen(true)
   }
 
 
@@ -152,6 +200,32 @@ const SignUp = () =>{
 
             {error && <p className='text-s text-red-400'>{error}</p>}
 
+            <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Are you absolutely sure?</DialogTitle>
+                  <DialogDescription>
+                    This action cannot be undone...
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+
+            <FieldGroup className="mb-4 mt-2">
+              <Field orientation="horizontal">
+                <Checkbox id="terms-checkbox-basic" name="terms-checkbox-basic" checked={termsAccepted} onCheckedChange={setTermsAccepted} />
+                <FieldLabel htmlFor="terms-checkbox-basic">
+                  <button
+                    className='hover:cursor-pointer hover:underline'        
+                    onClick={openTerms}                  
+                  >
+                    Accept terms and conditions
+                  </button>
+                  
+                </FieldLabel>
+              </Field>
+            </FieldGroup>
+
             <button
               type='submit'
               className='w-full text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-primary)] rounded-lg px-6 py-3 mt-4 mb-6 shadow-lg shadow-grey-100 cursor-pointer'
@@ -168,6 +242,14 @@ const SignUp = () =>{
                Log in here
               </Link>
             </p>
+            <p>or</p>
+            <button 
+                className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-primary)] hover:cursor-pointer'
+                onClick={signInWithGoogle}
+              > 
+              Sign in with Google
+            </button>
+
         </form>
       </div>
     </AuthLayout>

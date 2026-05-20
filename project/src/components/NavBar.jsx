@@ -34,12 +34,17 @@ const NavBar = () =>{
       <div className='hidden md:flex gap-5 justify-center'>
         <RefNav name="Communities"/>
         <RefNav name="About Us"/>
-        <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl' onClick={() =>{navigate("/account")}} >Account</button>
+        <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl' 
+          onClick={() =>{
+            if (auth.currentUser) navigate("/account")
+            else navigate("/login")
+          }} 
+          >Account</button>
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
-        onClick={ (e) =>{
-          e.preventDefault()
-          setOpen(true)
-        }}
+          onClick={ (e) =>{
+            e.preventDefault()
+            setOpen(true)
+          }}
         >Crisis Support</button>
         <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
         onClick={ (e) =>{
@@ -70,7 +75,12 @@ const NavBar = () =>{
           />
           <div className="flex flex-col gap-4 md:hidden space-y-4 px-6 py-3 border b border-slate-200 rounded-lg absolute top-full right-0 bg-white shadow-md z-50">
             <RefNav name="Communities"/>
-            <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3' onClick={() =>{navigate("/login")}} >Account</button>
+            <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3' 
+              onClick={() =>{
+              if (auth.currentUser) navigate("/account")
+              else navigate("/login")
+            }} 
+            >Account</button>
             <RefNav name="About Us"/>
             <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
             onClick={ (e) =>{
@@ -78,6 +88,12 @@ const NavBar = () =>{
               setOpen(true)
             }}
             >Crisis Support</button>
+            <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-[var(--color-eight)] transition-[text-decoration-color] duration-500 text-xl text-left py-3'
+              onClick={ (e) =>{
+                e.preventDefault()
+                logOut()
+              }}
+              >Log Out</button>
           </div>
           {open && <CrisisSupport onClose={() => setOpen(false)} />}
         </>

@@ -14,6 +14,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "firebase": "^12.11.0",
     "generate-random-username": "^2.1.0",
     "lucide-react": "^0.563.0",

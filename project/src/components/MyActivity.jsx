@@ -13,10 +13,12 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { Button } from "./ui/button";
 import { Heart, FileText, MessageCircle, Bookmark, ChevronDown, ChevronUp, Loader, X, Trash2 } from "lucide-react"
-import { fetchPostsByUser, fetchCommentsByUser, fetchBookmarksByUser, fetchLikesByUser, fetchPostById } from "@/config/firebase"
+import { fetchPostsByUser, fetchCommentsByUser, fetchBookmarksByUser, fetchLikesByUser, fetchPostById, deleteComment, deletePost, deleteLike, deleteBookmark } from "@/config/firebase"
 import { toast } from 'sonner'
 import { getRelativeTime } from "@/lib/relative-time";
 import Post from "../components/Post"
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "@/config/firebase";
 
 function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   let Icon
@@ -63,28 +65,40 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   )
 }
 
-function ActivityRow({ text1, text2, time, onClick }) {
-  console.log("text1: ", text1)
-  console.log("text2: ", text2)
-  console.log("time: ", time)
+function ActivityRow({id, postId, text1, text2, time, onClick, deleteText }) {
+
+  //based on deleteText decide what to call from firebase (remove like, remove post, remove bm, remove comment) in span onClick
+  const deleteFunction = () =>{
+    switch (deleteText){
+      case "delete post": return deletePost(id);
+      case "delete comment": return deleteComment(id, postId);
+      case "remove like": return deleteLike(id, postId);
+      case "remove bookmark": return deleteBookmark(id);
+      default: return () => {};
+    }
+  }
+
   return (
-    <button onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:bg-slate-100 rounded-xl">
+    <div onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:bg-slate-100 rounded-xl">
       <div className="flex-1 py-[0.5px]">
         <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1}</p>
           {text2 && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2}</p>}
       </div>
-      <div className="relative group py-[1px]">
+      <div className="relative group flex flex-col items-end gap-1 py-[1px] px-1">
         {time && <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{time}</span>}
-        <Trash2 className="h-5 w-5 text-muted-foreground hover:cursor-pointer hover:text-red-400" />
-        <span class="absolute right-full mr-2 top-1/2 -translate-y-1/2
-               opacity-0 group-hover:opacity-100
-               transition-opacity duration-200
-               bg-gray-800 text-white text-xs
-               px-2 py-1 rounded whitespace-nowrap">
-    Delete post
-  </span>
+         <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteFunction();
+          }}
+        >
+         <Trash2 className="h-5 w-5 text-muted-foreground hover:cursor-pointer hover:text-red-400" />
+          <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+            {deleteText}
+          </span>
+        </button>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -104,6 +118,7 @@ export default function MyActivity ({ user }) {
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
   const [expandedPost, setExpandedPost] = useState(null);
   const [expandedComment, setExpandedComment] = useState(null);
+  const [expandedComBookmark, setExpandedComBookmark] = useState(null);
 
   React.useEffect(() => {
     if(user.uid === null) return;
@@ -139,11 +154,10 @@ export default function MyActivity ({ user }) {
         //set the actual bookmarked posts
         console.log("fet bm: ", await fetchBookmarksByUser(user))
         for (const bookmark of fetchedBookmarks) {
-          console.log("bm post id: ", bookmark.postId)
           console.log("bm: ", bookmark)
-          console.log(bookmark.rootPostId ? bookmark.rootPostId : bookmark.postId)
-          const post = await fetchPostById(bookmark.rootPostId ? bookmark.rootPostId : bookmark.postId);
-          if (post) setBookmarkedPosts((prev) => ({...prev, [bookmark.postId]: post}));
+          console.log(bookmark.commentId ? bookmark.commentId : bookmark.postId)
+          const post = await fetchPostById(bookmark.commentId ? bookmark.commentId : bookmark.postId);
+          if (post) setBookmarkedPosts((prev) => ({...prev, [bookmark.commentId ? bookmark.commentId : bookmark.postId]: post}));
         }
       } catch(error) {
         console.log(error);
@@ -175,9 +189,9 @@ export default function MyActivity ({ user }) {
     fetchL();
   }, [user?.uid])
 
-  React.useEffect(() => {
-  console.log("UPDATED BOOKMARKED:", bookmarkedPosts);
-}, [bookmarkedPosts]);
+//   React.useEffect(() => {
+//   console.log("UPDATED BOOKMARKED:", bookmarkedPosts);
+// }, [bookmarkedPosts]);
 //   React.useEffect(() => {
 //   console.log("UPDATED BOOKMARKS:", bookmarks);
 // }, [bookmarks]);
@@ -187,10 +201,12 @@ export default function MyActivity ({ user }) {
     return (
       <ActivityRow
         key={post.id}
+        id={post.id}
         text1={post.title}
         text2={post.content}
         time={getRelativeTime(post.createdAt)}
         onClick={() => setExpandedPost(post)}
+        deleteText="delete post"
       />
     )
   }
@@ -200,25 +216,47 @@ export default function MyActivity ({ user }) {
       return(
         <ActivityRow
           key={comment.id}
+          id={comment.id}
+          postId={comment.postId}
           text1={comment.content}
           text2={comment.repliedTo ? `replied to @${comment.repliedTo}` : null}
           time={getRelativeTime(comment.createdAt)}
-          onClick={() => openPost(comment.rootPostId || comment.postId, comment)}
+          onClick={() => openPost(comment.postId || comment.parentId, comment)}
+          deleteText="delete comment"
         />
       )
     }
   }
 
   const renderBookmark = (bookmark) => {
-    const post = bookmarkedPosts[bookmark.rootPostId ? bookmark.rootPostId : bookmark.postId]
-    if(post){
+  //  const post = bookmarkedPosts[bookmark.commentId ? bookmark.commentId : bookmark.postId]
+   const post = bookmarkedPosts[bookmark.postId]
+    const com = bookmarkedPosts[bookmark.commentId]
+    if (com){
+      console.log("com",com)
+      const post = getDoc(doc(db, "posts", com?.postId))
+      return (
+        <ActivityRow
+          key={com.id}
+          id={com.id}
+          text1={com.title}
+          text2={com.content}
+          time={getRelativeTime(com.createdAt)}
+          onClick={() => openPost(bookmark.postId, com)}
+          deleteText="remove bookmark"
+        />
+      )
+    } else {
+      const post = bookmarkedPosts[bookmark.postId]
       return (
         <ActivityRow
           key={post.id}
+          id={post.id}
           text1={ post ? post.title : ""}
           text2={post ? post.content : ""}
           time={getRelativeTime(post.createdAt)}
-          onClick={() => openPost(post.id)}
+          onClick={() => openPost(bookmark.postId)}
+          deleteText="remove bookmark"
         />
       )
     }
@@ -231,19 +269,23 @@ export default function MyActivity ({ user }) {
       return (
         <ActivityRow
           key={post.id}
+          id={like.id}
+          postId={post.id}
           text1={post ? post.title : ""}
           text2={post.content}
           time={getRelativeTime(post.createdAt)}
           onClick={() => openPost(post.id)}
+          deleteText="remove like"
         />
       )
     }    
   }
 
-  const openPost = async (postId, comment = null) => {
+  const openPost = async (postId, comment = null, bookmark = null) => {
     const post = likedPosts[postId] || bookmarkedPosts[postId] || posts?.find((p) => p.id === postId);
     setExpandedPost(post || null);
     setExpandedComment(comment || null);
+    setExpandedComBookmark(bookmark || null);
     console.log("commmm", expandedComment)
     if(post){
       const p = await fetchPostById(postId)
@@ -255,12 +297,12 @@ export default function MyActivity ({ user }) {
     console.log(expandedPost)
     return (
       <div className="space-y-3">
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setExpandedPost(null); setExpandedComment(null); }}>
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setExpandedPost(null); setExpandedComment(null); setExpandedComBookmark(null) }}>
           <X className="h-4 w-4" /> Back to My Activity
         </Button>
         {expandedComment && (
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Your comment</p>
+            {/* <p className="text-xs font-medium text-muted-foreground mb-1">Your comment</p> */}
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">@{expandedComment.username}</span>
               {expandedComment.repliedTo && (
@@ -273,6 +315,23 @@ export default function MyActivity ({ user }) {
               <span>{getRelativeTime(expandedComment.createdAt)}</span>
             </div>
             <p className="mt-1 text-sm text-card-foreground">{expandedComment.content}</p>
+          </div>
+        )}
+        {expandedComBookmark && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Your comment</p>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">@{expandedComBookmark.username}</span>
+              {expandedComBookmark.repliedTo && (
+                <>
+                  <span>replied to</span>
+                  <span className="font-medium text-foreground">@{expandedComBookmark.repliedTo}</span>
+                </>
+              )}
+              <span>·</span>
+              <span>{getRelativeTime(expandedComBookmark.createdAt)}</span>
+            </div>
+            <p className="mt-1 text-sm text-card-foreground">{expandedComBookmark.content}</p>
           </div>
         )}
         <Post {...expandedPost}/>
@@ -317,5 +376,4 @@ export default function MyActivity ({ user }) {
     </div>
   )
 }
-
 

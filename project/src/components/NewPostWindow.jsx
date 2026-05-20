@@ -9,11 +9,11 @@ import { Checkbox } from './ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { toast } from 'sonner';
 
-const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) =>{
+const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions, activeCategory}) =>{
 
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
-  const [category, setCategory] = React.useState(categories[0]);
+  const [category, setCategory] = React.useState(activeCategory);
   const [tags, setTags] = React.useState([]);
 
 
@@ -40,6 +40,8 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
       setTags([...tags, tag]);
     }
   };
+
+  console.log(activeCategory)
 
 
   return(
@@ -80,7 +82,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions}) 
                 className="mt-2"
                 
                 onValueChange={(val) => setCategory(val)}
-                defaultValue={categories[0]}
+                defaultValue={activeCategory}
               >
                 {categories.map((cat, index) => (
                   <div key={index} className="flex items-center gap-3">

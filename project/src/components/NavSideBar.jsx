@@ -39,7 +39,7 @@ const NavSideBar = () =>{
               return (
                 <Combobox key={item.title} communities={communities}>
                   <ComboboxTrigger>
-                    <div className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:text-slate-100">
+                    <div className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:cursor-pointer hover:shadow-md ">
                       <item.icon className="h-5 w-5" />
                       <span className="text-sm font-medium">Communities</span>
                     </div>
@@ -48,22 +48,25 @@ const NavSideBar = () =>{
                   <ComboboxContent>
                     <ComboboxList>
                       {communities?.map((community) => (
-                        <ComboboxItem key={community.title} value={community.title}>
-                          <NavLink
+                        <NavLink
                             to={community.url}
-                            className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
+                            className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:cursor-pointer hover:shadow-md"
                           >
+                        <ComboboxItem key={community.title} value={community.title}>
+                          
                             <item.icon className="h-5 w-5" />
-                            <span className="text-sm font-medium">{community.title}</span>
-                          </NavLink>
+                            <span className="text-sm font-medium text-pink-800">{community.title}</span>
+                          
                         </ComboboxItem>
+                        </NavLink>
                       ))}
                     </ComboboxList>
                   </ComboboxContent>
                 </Combobox>
               )
             } else if (item.type === "action"){
-                return(<button key={item.title} size="sm" className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:text-slate-100" onClick={(e) =>{
+                return(<button key={item.title} size="sm" className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:shadow-md" 
+                   onClick={(e) =>{
                 e.preventDefault()
                 console.log(`Clicked on ${item.title}`)
                 setMessagesOpen(true)
@@ -75,7 +78,7 @@ const NavSideBar = () =>{
             return <NavLink
               key={item.title}
               to={item.url}
-              className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:text-slate-100"
+              className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:shadow-md"
             >
               <item.icon className="h-5 w-5"/>
               <span className="text-sm font-medium">{item.title}</span>
