@@ -252,8 +252,8 @@ React.useEffect(() => {
               )}
               {
                 visiblePosts.length > 0 ? (
-                  visiblePosts.map((post) =>(
-                    <Post 
+                  visiblePosts.map((post) =>{
+                      return (<Post 
                       key={post.id}
                       id={post.id} 
                       title={post.title} 
@@ -265,9 +265,10 @@ React.useEffect(() => {
                       tags={post.tags}
                       category={post.category}
                       onUserClick={onUserClick}
+                      status={post.status}
                     />
-                  ))
-                ) : (
+                  
+                  )})) : (
                   <div className="text-center py-12 text-pink-800">
                     <p>No posts in this category yet.</p>
                     <p>Be the first to create one!</p>

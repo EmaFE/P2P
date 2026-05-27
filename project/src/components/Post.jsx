@@ -13,7 +13,7 @@ import { collection, getDocs, query, where, onSnapshot, doc } from "firebase/fir
 import { useAuth } from "@/util/authContext";
 import { toast } from "sonner";
 
-const MAX_CONTENT_LENGTH = 200;
+const MAX_CONTENT_LENGTH = 50;
 const MAX_VISIBLE_TAGS = 3;
 const TAG_EXPAND_THRESHOLD = 4;
 
@@ -38,7 +38,7 @@ export function buildCommentTree(comments, rootId) {
   return roots;
 }
 
-export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, category, onUserClick }) {
+export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, category, onUserClick, status }) {
   //console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
@@ -52,8 +52,11 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const [replyTarget, setReplyTarget] = useState(null);
 
   const needsTruncation = content.length > MAX_CONTENT_LENGTH;
+
   const displayContent = !expanded && needsTruncation ? content.slice(0, MAX_CONTENT_LENGTH) + "…" : content;
+
   const needsTagExpand = tags?.length > TAG_EXPAND_THRESHOLD ? true : false;
+  
   const visibleTags = tagsExpanded ? tags : tags?.slice(0, MAX_VISIBLE_TAGS);
   
    const commentTree = commentsData ? buildCommentTree(commentsData, id) : null;
@@ -191,18 +194,38 @@ export default function Post({ id, title, content, username, createdAt, likes, c
         </div> 
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        <p className="text-sm text-card-foreground leading-relaxed">
-          {displayContent}
-          {needsTruncation && (
-            <button
-              onClick={() => setExpanded((prev) => !prev)}
-              className="ml-1 text-sm font-medium text-primary hover:underline"
-            >
-              {expanded ? "Show less" : "Read more"}
-            </button>
-          )}
-        </p>
+      <CardContent className="space-y-3 w-full">
+        {
+          status !== "deleted" ? (
+            <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+              {displayContent}
+              {needsTruncation && (
+                <button
+                  onClick={() => setExpanded((prev) => !prev)}
+                  className="ml-1 text-sm font-medium text-primary hover:underline"
+                >
+                  {expanded ? "Show less" : "Read more"}
+                </button>
+              )}
+            </p>
+          ) : (
+            <p className=" italic mt-1 text-sm text-card-foreground leading-relaxed break-words">
+              [Post has been removed by the user or a moderator]
+            </p>
+          )
+        }
+        
+        {/* // <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+        //   {displayContent}
+        //   {needsTruncation && (
+        //     <button
+        //       onClick={() => setExpanded((prev) => !prev)}
+        //       className="ml-1 text-sm font-medium text-primary hover:underline"
+        //     >
+        //       {expanded ? "Show less" : "Read more"}
+        //     </button>
+        //   )}
+        // </p> */}
 
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handleLike}>

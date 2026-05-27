@@ -65,7 +65,7 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   )
 }
 
-function ActivityRow({id, postId, text1, text2, time, onClick, deleteText }) {
+function ActivityRow({id, postId, text1, text2, time, status, onClick, deleteText }) {
 
   //based on deleteText decide what to call from firebase (remove like, remove post, remove bm, remove comment) in span onClick
   const deleteFunction = () =>{
@@ -78,11 +78,18 @@ function ActivityRow({id, postId, text1, text2, time, onClick, deleteText }) {
     }
   }
 
+  console.log("status: ", status)
+
   return (
     <div onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:bg-slate-100 rounded-xl">
       <div className="flex-1 py-[0.5px]">
+        {status === "deleted" && (
+          <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">[Deleted]</p>
+        )}
+        {status === "active" && (
         <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1}</p>
-          {text2 && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2}</p>}
+        )}
+          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2}</p>}
       </div>
       <div className="relative group flex flex-col items-end gap-1 py-[1px] px-1">
         {time && <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{time}</span>}
@@ -198,6 +205,7 @@ export default function MyActivity ({ user }) {
 
 
   const renderPost = (post) => {
+    console.log("rendering post with status: ", post.status)
     return (
       <ActivityRow
         key={post.id}
@@ -205,6 +213,7 @@ export default function MyActivity ({ user }) {
         text1={post.title}
         text2={post.content}
         time={getRelativeTime(post.createdAt)}
+        status={post.status}
         onClick={() => setExpandedPost(post)}
         deleteText="delete post"
       />
@@ -221,6 +230,7 @@ export default function MyActivity ({ user }) {
           text1={comment.content}
           text2={comment.repliedTo ? `replied to @${comment.repliedTo}` : null}
           time={getRelativeTime(comment.createdAt)}
+          status={comment.status}
           onClick={() => openPost(comment.postId || comment.parentId, comment)}
           deleteText="delete comment"
         />
@@ -242,6 +252,7 @@ export default function MyActivity ({ user }) {
           text1={com.title}
           text2={com.content}
           time={getRelativeTime(com.createdAt)}
+          status={com.status}
           onClick={() => openPost(bookmark.postId, com)}
           deleteText="remove bookmark"
         />
@@ -255,6 +266,7 @@ export default function MyActivity ({ user }) {
           text1={ post ? post.title : ""}
           text2={post ? post.content : ""}
           time={getRelativeTime(post.createdAt)}
+          status={post.status}
           onClick={() => openPost(bookmark.postId)}
           deleteText="remove bookmark"
         />
@@ -274,6 +286,7 @@ export default function MyActivity ({ user }) {
           text1={post ? post.title : ""}
           text2={post.content}
           time={getRelativeTime(post.createdAt)}
+          status={post.status}
           onClick={() => openPost(post.id)}
           deleteText="remove like"
         />
@@ -283,14 +296,18 @@ export default function MyActivity ({ user }) {
 
   const openPost = async (postId, comment = null, bookmark = null) => {
     const post = likedPosts[postId] || bookmarkedPosts[postId] || posts?.find((p) => p.id === postId);
-    setExpandedPost(post || null);
-    setExpandedComment(comment || null);
-    setExpandedComBookmark(bookmark || null);
-    console.log("commmm", expandedComment)
-    if(post){
-      const p = await fetchPostById(postId)
-      setExpandedPost(p);
-    }
+     if (!comment && post?.status === "deleted") {
+      toast.error("This content has been deleted and cannot be viewed.");  
+    } else {
+        setExpandedPost(post || null);
+        setExpandedComment(comment || null);
+        setExpandedComBookmark(bookmark || null);
+        console.log("commmm", expandedComment)
+        if(post){
+          const p = await fetchPostById(postId)
+          setExpandedPost(p);
+        }
+      }
   };
 
   if (expandedPost) {

@@ -20,6 +20,7 @@ import Uni from './pages/communities/Uni'
 import { Toaster } from 'sonner'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Account from './components/Account'
+import Admin from './pages/Admin'
 
 export default function App(){
   return(
@@ -35,6 +36,7 @@ export default function App(){
             <Route path="/community/grief" exact element={<ProtectedRoute><Grief /></ProtectedRoute>}/>
             <Route path="/community/universityStudents" exact element={<ProtectedRoute><Uni /></ProtectedRoute>}/>
             <Route path="/account" exact element={<ProtectedRoute><Account /></ProtectedRoute>}/>
+            <Route path="/admin" exact element={<ProtectedRoute><Admin /></ProtectedRoute>}/>
           </Routes>
         </Router>
       </AuthProvider>

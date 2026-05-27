@@ -62,7 +62,8 @@ export async function fetchPosts(category, user) {
       commentsCount: data.commentsCount ?? 0,
       tags: data.tags ?? [],
       category: data.category ?? null,
-      reported: data.reported ?? false,
+      status: data.status ?? "active",
+      deletionReason: data.deletionReason ?? "",
       community: data.community ?? null,
     };
   });
@@ -164,7 +165,7 @@ export async function isBookmarkedByUser(id, userId, type){
 export async function handleBookmarkPost(postId, bookmarked, userId) {
   //const postRef = doc(db, "posts", postId);  
   // console.log("post ref: ", postRef)
-  console.log("bookmarked value in handleBookmarkPost: " + bookmarked )
+  //console.log("bookmarked value in handleBookmarkPost: " + bookmarked )
   //console.log("post id from firebase.js: " + postId + "bookmarked: " + postRef.bookmarked + "BEFORE UPDATE")
  // await updateDoc(postRef, { bookmarked: bookmarked });
   if (bookmarked){
@@ -208,9 +209,25 @@ export async function handleBookmarkComment(commentId, bookmarked, postId, userI
 }}
 
 export async function reportPost(postId) {
-  const postRef = doc(db, "posts", postId);
-  await updateDoc(postRef, { reported: true });
-  toast.success("Post reported. Thank you keeping the community safe!");
+  const postData = await fetchPostById(postId);
+  if (postData?.status === "active"){
+      const postRef = doc(db, "posts", postId);
+      await updateDoc(postRef, { status: "reported"});
+      toast.success("Post reported. Thank you for helping to keep the community safe!")
+  } else {
+      toast.success("Post has already been reported and is under review. Thank you for helping to keep the community safe!")
+  }
+}
+
+export async function reportComment(commentId) {
+  const commentData = await fetchCommentById(commentId);
+  if (commentData?.status === "active"){
+      const commentRef = doc(db, "comments", commentId);
+      await updateDoc(commentRef, { status: "reported"});
+      toast.success("Comment reported. Thank you for helping to keep the community safe!")
+  } else {
+      toast.success("Comment has already been reported and is under review. Thank you for helping to keep the community safe!")
+  }
 }
 
 export async function fetchComments(postId) {
@@ -231,10 +248,32 @@ export async function fetchComments(postId) {
       repliedTo: data.repliedTo || null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
-      reported: data.reported ?? false,
+      status: data.status ?? "active",
+      deletionReason: data.deletionReason ?? "",
       commentsCount: data.commentsCount ?? 0,
       postId: data.postId ?? ""
     //  bookmarked: data.bookmarked ?? false,
+    }
+  })
+}
+
+export async function fetchAllComments(){
+  const snapshot = await getDocs(collection(db, "comments"));
+  return snapshot.docs.map((docSnap) =>{
+    const data = docSnap.data()
+    return {
+      id: docSnap.id,
+      username: data.username,
+      uid: data.uid,
+      content: data.content,
+      parentId: data.parentId,
+      repliedTo: data.repliedTo || null,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+      likes: data.likes ?? 0,
+      status: data.status ?? "active",
+      deletionReason: data.deletionReason ?? "",
+      commentsCount: data.commentsCount ?? 0,
+      postId: data.postId ?? ""
     }
   })
 }
@@ -249,9 +288,11 @@ export async function createComment({ parentId, username, uid, content, repliedT
       repliedTo,
       createdAt: serverTimestamp(),
       likes: 0,
-      reported: false,
+      status: "active",
       commentsCount: 0,
       postId,
+      status: "active",
+      deletionReason: "",
       //bookmarked: false,
     });
     toast.success("Comment posted successfully!");
@@ -289,8 +330,9 @@ export async function createPost({ title, content, username, tags, uid, activeCa
     tags: tags,
     category: activeCategory,
     createdAt: now,
-    reported: false,
     community: communityName,
+    status: "active",
+    deletionReason: "",
    // bookmarked: false,
   }
 
@@ -321,6 +363,8 @@ export async function getUserName(){
 }
 
 export async function fetchPostsByUser (user) {
+  console.log("user: ", user)
+  console.log("auth user: ", auth.currentUser)
   const q = query(collection(db, "posts"), where("uid", "==", user.uid), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((docSnap) => {
@@ -336,7 +380,8 @@ export async function fetchPostsByUser (user) {
       commentsCount: data.commentsCount ?? 0,
       tags: data.tags ?? [],
       category: data.category ?? null,
-      reported: data.reported ?? false,
+      status: data.status ?? "active",
+      deletionReason: data.deletionReason ?? "",
       community: data.community ?? null,
     }
   });
@@ -356,8 +401,9 @@ export async function fetchCommentsByUser (user) {
       repliedTo: data.repliedTo || null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       likes: data.likes ?? 0,
-      reported: data.reported ?? false,
+      status: data.status ?? "active",
       commentsCount: data.commentsCount ?? 0,
+      deletionReason: data.deletionReason ?? "",
       postId: data.postId,
     }
   })
@@ -395,25 +441,25 @@ export async function fetchBookmarksByUser(user) {
 }
 
 export async function fetchPostById (id) {
-  const commDoc = await getDoc(doc(db, "comments", id));
-  const data = commDoc.data();
-  if(data){
-    console.log("comm doc data: ",data);
-    return {
-      id: commDoc.id,
-      content: data.content,
-      username: data.username,
-      uid: data.uid,
-      parentId: data.parentId ?? "",
-      postId: data.postId ?? "",
-      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
-      likes: data.likes ?? 0,
-      commentsCount: data.commentsCount ?? 0,
-      reported: data.reported ?? false,
-      community: data.community ?? null,
-      isComment: true,
-    }
-   } else {
+  // const commDoc = await getDoc(doc(db, "comments", id));
+  // const data = commDoc.data();
+  // if(data){
+  //   console.log("comm doc data: ",data);
+  //   return {
+  //     id: commDoc.id,
+  //     content: data.content,
+  //     username: data.username,
+  //     uid: data.uid,
+  //     parentId: data.parentId ?? "",
+  //     postId: data.postId ?? "",
+  //     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+  //     likes: data.likes ?? 0,
+  //     commentsCount: data.commentsCount ?? 0,
+  //     reported: data.reported ?? false,
+  //     community: data.community ?? null,
+  //     isComment: true,
+  //   }
+  //  } else {
       const postDoc = await getDoc(doc(db, "posts", id)); 
       const data = postDoc.data();
       if(data){
@@ -429,11 +475,12 @@ export async function fetchPostById (id) {
           commentsCount: data.commentsCount ?? 0,
           tags: data.tags ?? [],
           category: data.category ?? null,
-          reported: data.reported ?? false,
+          status: data.status ?? "active",
+          deletionReason: data.deletionReason ?? "",
           community: data.community ?? null,
         }
-      }
-   }
+      } else fetchCommentById(id);
+  // }
 }
 
 export async function fetchCommentById (id) {
@@ -441,7 +488,7 @@ export async function fetchCommentById (id) {
     const data = commDoc.data();
     console.log("post doc data: ",data);
     return {
-      id: postDoc.id,
+      id: commDoc.id,
       title: data.title ?? "",
       content: data.content,
       username: data.username,
@@ -451,7 +498,7 @@ export async function fetchCommentById (id) {
       commentsCount: data.commentsCount ?? 0,
       tags: data.tags ?? [],
       category: data.category ?? null,
-      reported: data.reported ?? false,
+      status: data.status ?? "active",
       community: data.community ?? null,
     }
 }
@@ -460,9 +507,8 @@ export async function deleteComment (commentId, postId){
   try {
     const commentRef = doc(db, "comments", commentId);
     await updateDoc(commentRef, {
-      content: "[deleted]",
-      username: "[deleted]",
-      deleted: true,
+      status: "deleted",
+      deletionReason: "Deleted by user",
     });
 
     toast.success("Comment deleted successfully!");
@@ -481,6 +527,13 @@ export async function deleteComment (commentId, postId){
 }
 
 export async function deleteBookmark (bookmarkId){
+
+  console.log("Current uid:", auth.currentUser?.uid);
+  console.log("Deleting bookmark:", bookmarkId);
+
+  const snap = await getDoc(doc(db, "bookmarks", bookmarkId));
+  console.log(snap.data());
+
   try {
     const bookmarkRef = doc(db, "bookmarks", bookmarkId);
     await deleteDoc(bookmarkRef);
@@ -496,9 +549,8 @@ export async function deletePost (postId){
   try {
     const postRef = doc(db, "posts", postId);
     await updateDoc(postRef, {
-      content: "[deleted]",
-      username: "[deleted]",
-      deleted: true,
+      status: "deleted",
+      deletionReason: "Deleted by user",
     });
 
     toast.success("Post deleted successfully!");
@@ -532,5 +584,57 @@ export async function deleteLike (likeId, postId){
   catch (error){
     toast.error("Could not delete like from post. Please try again.")
     console.error("error deleting like: ", error)
+  }
+}
+
+// export async function dismiss(id, collection){
+//   console.log("wtffffffffffffffffffffffffffffffffff")
+//   try {
+//     let ref = doc(db, "posts", id);
+//     console.log("22222222222222222222222222")
+//     const snapshot = await getDoc(ref)
+
+//     console.log("doc???????????? ", snapshot)
+
+//     if (!snapshot.exists()) {
+//       console.log("i am a comment")
+//       ref = doc(db, "comments", id);
+//       // console.log("ref ",getDoc(ref))
+//        const commentSnapshot = await getDoc(ref);
+//       if (!commentSnapshot.exists()) {
+//         throw new Error("Document not found in posts or comments");
+//       }
+//     }
+//     // const ref = doc(db, collection, id);
+//     await updateDoc(ref, { status: "active", deletionReason: "" });
+//     toast.success("Content successfully dismissed / restored!");
+//   } catch (error) {
+//     toast.error("Could not dismiss content. Please try again.");
+//     console.log("error dismissing content: ", error);
+//   }
+// }
+
+export async function dismiss(id, collection){
+  console.log("wtffffffffffffffffffffffffffffffffff")
+  try {
+    const ref = doc(db, collection, id);
+    await updateDoc(ref, { status: "active", deletionReason: "" });
+    toast.success("Content successfully dismissed / restored!");
+  } catch (error) {
+    toast.error("Could not dismiss content. Please try again.");
+    console.log("error dismissing content: ", error);
+  }
+}
+
+export async function deleteContent (id, reason, collection){
+
+  try {
+    const ref = doc(db, collection, id)
+    await updateDoc(ref, { status: "deleted", deletionReason: reason })
+    toast.success("Content successfully deleted!")
+  }
+  catch (error){
+    toast.error("Could not delete content. Please try again.")
+    console.log("error deleting content: ", error)
   }
 }

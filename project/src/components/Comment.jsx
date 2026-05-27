@@ -1,6 +1,6 @@
 import React from "react";
 import { collection, getDocs, query, where, onSnapshot } from "firebase/firestore";
-import { db, toggleLikeComment, handleBookmarkComment, isLikedByUser, createComment, isBookmarkedByUser } from "@/config/firebase";
+import { db, toggleLikeComment, handleBookmarkComment, isLikedByUser, createComment, isBookmarkedByUser, reportComment } from "@/config/firebase";
 import { useAuth } from "@/util/authContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ function CommentItem({ comment, onReplyClick, postId }) {
 
   const handleReport = () => {
     // Implement report functionality here
+    reportComment(comment.id)
     console.log("Reported comment ID:", comment.id);
   };
 
@@ -133,7 +134,8 @@ function CommentItem({ comment, onReplyClick, postId }) {
             <span>{getRelativeTime(comment.createdAt)}</span>
           </div>
 
-           <p className=" mt-1 text-sm text-card-foreground leading-relaxed break-words">
+          {comment.status !== "deleted" ? (
+            <p className=" mt-1 text-sm text-card-foreground leading-relaxed break-words">
           {displayContent}
           {needsTruncation && (
             <button
@@ -144,6 +146,23 @@ function CommentItem({ comment, onReplyClick, postId }) {
             </button>
           )}
         </p>
+          ) : (
+            <p className=" italic mt-1 text-sm text-card-foreground leading-relaxed break-words">
+              [Comment has been removed by the user or a moderator]
+            </p>
+          )}
+{/* 
+        //    <p className=" mt-1 text-sm text-card-foreground leading-relaxed break-words">
+        //   {displayContent}
+        //   {needsTruncation && (
+        //     <button
+        //       onClick={() => setExpanded((prev) => !prev)}
+        //       className="ml-1 text-sm font-medium text-primary hover:underline"
+        //     >
+        //       {expanded ? "Show less" : "Read more"}
+        //     </button>
+        //   )}
+        // </p> */}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5" onClick={handleLike}>
