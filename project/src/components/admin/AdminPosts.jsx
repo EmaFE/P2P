@@ -29,7 +29,7 @@ export default function AdminPosts(){
     }, [posts.length]); //fetch all posts, can be optimsied later if needed
 
   const filteredPosts = posts.filter((post) =>{
-    const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) || post.content.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) || post.content.toLowerCase().includes(search.toLowerCase()) || post.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(post.createdAt).toLowerCase().includes(search.toLowerCase()) 
     if (filter === "All") return matchesSearch;
     if (filter === "Active") return matchesSearch && post.status === "active";
     if (filter === "Deleted") return matchesSearch && post.status === "deleted";
@@ -38,15 +38,15 @@ export default function AdminPosts(){
   })
 
    const handleDeletePost = async (reason) => {
-    await deleteContent(deleteDialogOpen.id, reason, "posts")
+    await deleteContent(deleteDialogOpen.post.id, reason, "posts","deleted", user.uid)
     setPosts((prev) => prev.filter((post) => post.id !== deleteDialogOpen.id))
-  };
+  }
 
   const handleRestore = async (id) => {
-    await dismiss(id, "posts");
+    await dismiss(id, "posts", user.uid);
     setPosts((prev) => prev.filter((post) => post.id !== id))
     console.log("Restore post with id: ", id)
-  };
+  }
 
 
   return (
@@ -85,7 +85,17 @@ export default function AdminPosts(){
                 <TableRow key={post.id} className={post.status === "reported" ? "bg-orange-50" : post.status === "deleted" ? "bg-red-50 opacity-60" : ""}>
                   <TableCell>
                     <div className="truncate font-medium">{post.title}</div>
-                      {post.deletionReason && <div className="text-xs text-destructive mt-0.5">Reason: {post.deletionReason}</div>}
+                      <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+                        {!expanded && post.deletionReason?.length > 10 ? `Reason: ${post.deletionReason.slice(0,10)}` + "..." : post.deletionReason ? `Reason: ${post.deletionReason}` : ""}
+                          {post.deletionReason?.length > 10 && (
+                            <button
+                              onClick={() => setExpanded((prev) => !prev)}
+                              className="ml-1 text-sm font-medium text-primary hover:underline"
+                            >
+                              {expanded ? "Show less" : "Read more"}
+                            </button>
+                          )}
+                      </p>
                   </TableCell>
 
 
@@ -122,7 +132,7 @@ export default function AdminPosts(){
                         <Button className="hover:cursor-pointer" variant="outline" size="sm" onClick={() => handleRestore(post.id)}>
                           <RotateCcw className="h-3 w-3 mr-1"/> Restore
                         </Button>) : (
-                          <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(post)}>
+                          <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen({post : post})}>
                           <Trash2 className="h-3 w-3 mr-1"/> Delete
                         </Button>
                         )
@@ -140,7 +150,7 @@ export default function AdminPosts(){
         open = {deleteDialogOpen}
         onOpenChange = {()=> setDeleteDialogOpen(false)}
         title = "Delete reported content"
-        descrption = "Are you sure you want to delete this content? This action cannot be undone."
+        description = {deleteDialogOpen.post ? `Delete: ${deleteDialogOpen.post.content.slice(0, 20)}` : ""}
         confirmText ="Delete"
         onConfirm={handleDeletePost}
       />

@@ -37,14 +37,14 @@ export default function AdminReports(){
   }, [reports.length]); //fetch all posts and filter for reported ones since theres no separate collection for reports, can be optimsied later if needed
 
   const handleDismiss = async (reportId, collection) =>{
-    await dismiss(reportId, collection)
+    await dismiss(reportId, collection, user.id, user.username)
     setReports((prev) => prev.filter((report) => report.id !== reportId))
     console.log("Dimissing report with id: ", reportId)
   }
 
   const handleDeleteReport = async (reason) => {
     const collection = deleteDialogOpen.tags ? "posts" :  "comments"
-    await deleteContent(deleteDialogOpen.id, reason, collection)
+    await deleteContent(deleteDialogOpen.id, reason, collection, "deleted", user.id, user.username)
     setReports((prev) => prev.filter((report) => report.id !== deleteDialogOpen.id))
     console.log("Deleting content for report with id: ", deleteDialogOpen.id, " with reason: ", reason)
   }
@@ -131,7 +131,7 @@ export default function AdminReports(){
         open = {deleteDialogOpen}
         onOpenChange = {()=> setDeleteDialogOpen(false)}
         title = "Delete reported content"
-        descrption = "Are you sure you want to delete this content? This action cannot be undone."
+        description = "Are you sure you want to delete this content? This action cannot be undone."
         confirmText ="Delete"
         onConfirm={handleDeleteReport}
       />

@@ -40,7 +40,7 @@ export default function AdminComments(){
     }, [comments.length]); //fetch all comments, can be optimsied later if needed
 
   const filteredComments = comments.filter((comment) =>{
-    const matchesSearch = comment.content.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = comment.content.toLowerCase().includes(search.toLowerCase()) || comment.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(comment.createdAt).toLowerCase().includes(search.toLowerCase()) 
     if (filter === "All") return matchesSearch;
     if (filter === "Active") return matchesSearch && comment.status === "active";
     if (filter === "Deleted") return matchesSearch && comment.status === "deleted";
@@ -49,14 +49,14 @@ export default function AdminComments(){
   })
 
    const handleDeleteComment = async (reason) => {
-    await deleteContent(deleteDialogOpen.id, reason, "comments")
+    await deleteContent(deleteDialogOpen.id, reason, "comments", user.uid)
     setComments((prev) => prev.filter((comment) => comment.id !== deleteDialogOpen.id))
   };
 
   const handleRestore = async (id) => {
-    await dismiss(id, "comments");
+    await dismiss(id, "comments", user.uid);
     setComments((prev) => prev.filter((comment) => comment.id !== id))
-    console.log("Restore comment with id: ", id)
+    // console.log("Restore comment with id: ", id)
   };
 
 
@@ -112,7 +112,17 @@ export default function AdminComments(){
                         </button>
                       )}
                     </p>
-                    {comment.deletionReason && <div className="text-xs text-destructive mt-0.5">Reason: {comment.deletionReason}</div>}
+                    <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+                      {!expanded && comment.deletionReason?.length > 10 ? `Reason: ${comment.deletionReason.slice(0,10)}` + "..." : comment.deletionReason !== "" ? `Reason: ${comment.deletionReason}` : ""}
+                        {comment.deletionReason?.length > 10 && (
+                          <button
+                            onClick={() => setExpanded((prev) => !prev)}
+                            className="ml-1 text-sm font-medium text-primary hover:underline"
+                          >
+                            {expanded ? "Show less" : "Read more"}
+                          </button>
+                        )}
+                    </p>
                   </TableCell>
 
                   <TableCell>@{comment.username}</TableCell>
@@ -134,7 +144,7 @@ export default function AdminComments(){
                         <Button className="hover:cursor-pointer" variant="outline" size="sm" onClick={() => handleRestore(comment.id)}>
                           <RotateCcw className="h-3 w-3 mr-1"/> Restore
                         </Button>) : (
-                          <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(comment)}>
+                          <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen({comment : comment})}>
                           <Trash2 className="h-3 w-3 mr-1"/> Delete
                         </Button>
                         )
@@ -152,7 +162,7 @@ export default function AdminComments(){
         open = {deleteDialogOpen}
         onOpenChange = {()=> setDeleteDialogOpen(false)}
         title = "Delete reported content"
-        descrption = "Are you sure you want to delete this content? This action cannot be undone."
+        description = {deleteDialogOpen.comment ? `Delete: ${deleteDialogOpen.comment.content.slice(0, 20)}` : ""}
         confirmText ="Delete"
         onConfirm={handleDeleteComment}
       />

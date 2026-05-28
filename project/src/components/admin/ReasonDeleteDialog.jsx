@@ -25,7 +25,7 @@ export default function ReasonDialog({ open, onOpenChange, title, description, c
         </DialogHeader>
 
         <Textarea
-          placeholder="Reason for deletion"
+          placeholder="Reason for action"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           className="min-h-[80px]"
@@ -38,7 +38,7 @@ export default function ReasonDialog({ open, onOpenChange, title, description, c
             disabled={!reason.trim()} 
             onClick={handleConfirm}
             >
-              Delete
+              {confirmText}
             </Button>
         </DialogFooter>
 

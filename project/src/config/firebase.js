@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc} from "firebase/firestore"
+import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc, snapshotEqual} from "firebase/firestore"
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
@@ -587,54 +587,117 @@ export async function deleteLike (likeId, postId){
   }
 }
 
-// export async function dismiss(id, collection){
-//   console.log("wtffffffffffffffffffffffffffffffffff")
-//   try {
-//     let ref = doc(db, "posts", id);
-//     console.log("22222222222222222222222222")
-//     const snapshot = await getDoc(ref)
-
-//     console.log("doc???????????? ", snapshot)
-
-//     if (!snapshot.exists()) {
-//       console.log("i am a comment")
-//       ref = doc(db, "comments", id);
-//       // console.log("ref ",getDoc(ref))
-//        const commentSnapshot = await getDoc(ref);
-//       if (!commentSnapshot.exists()) {
-//         throw new Error("Document not found in posts or comments");
-//       }
-//     }
-//     // const ref = doc(db, collection, id);
-//     await updateDoc(ref, { status: "active", deletionReason: "" });
-//     toast.success("Content successfully dismissed / restored!");
-//   } catch (error) {
-//     toast.error("Could not dismiss content. Please try again.");
-//     console.log("error dismissing content: ", error);
-//   }
-// }
-
-export async function dismiss(id, collection){
-  console.log("wtffffffffffffffffffffffffffffffffff")
+export async function dismiss(id, collection, admin_id){
+  const admin = await getUser(admin_id)
+  let data
   try {
     const ref = doc(db, collection, id);
-    await updateDoc(ref, { status: "active", deletionReason: "" });
-    toast.success("Content successfully dismissed / restored!");
+    await updateDoc(ref, { status: "active", deletionReason: "" })
+    toast.success("Content successfully dismissed / restored!")
+    const snapshot = await getDoc(ref)
+    data = snapshot.data()
   } catch (error) {
-    toast.error("Could not dismiss content. Please try again.");
-    console.log("error dismissing content: ", error);
+    toast.error("Could not dismiss content. Please try again.")
+    console.log("error dismissing content: ", error)
+  } finally {
+    console.log("admin_id from dismiss: ", admin_id)
+    console.log("admin_username from dismiss: ", admin.username)
+    createLog(collection, admin_id, admin.username, id, data.uid, data.username, "dismiss")
   }
 }
 
-export async function deleteContent (id, reason, collection){
-
+export async function deleteContent (id, reason, collection, status, admin_id){
+  const admin = await getUser(admin_id)
+  let data
   try {
     const ref = doc(db, collection, id)
-    await updateDoc(ref, { status: "deleted", deletionReason: reason })
+    await updateDoc(ref, { status: status, deletionReason: reason })
     toast.success("Content successfully deleted!")
+    const snapshot = await getDoc(ref)
+    data = snapshot.data()
   }
   catch (error){
     toast.error("Could not delete content. Please try again.")
     console.log("error deleting content: ", error)
+  } finally {
+    createLog(collection, admin_id, admin.username, id, data.uid, data.username, "delete", reason)
   }
+}
+
+export async function fetchUsers (){
+  const snapshot = await getDocs(collection(db, "users"))
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data()
+    return {
+      id: docSnap.id,
+      uid: data.uid,
+      username: data.username,
+      createdAt: data.createdAt,
+      email: data.email,
+      status: data.status,
+      deletionReason: data.reason ?? "",
+    }
+  })
+}
+
+export async function  createLog(collectionName, admin_id, admin_username, og_content_id = null, impacted_user_id, impacted_username, type, reason=null){
+  let action
+  if(type === "delete"){
+    if (collectionName === "posts") { action = "deleted_post" }
+      else if (collectionName === "comments") { action = "deleted_comment" }
+        else action = "deleted_report"
+  } else if (type === "dismiss"){
+    if (collectionName === "posts") { action = "restored_post" }
+      else if (collectionName === "comments") { action = "restored_comment" }
+        else action = "dismissed_report"
+  }
+ 
+  // console.log("admin_id: ", admin_id)
+  // console.log("admin_username: ", admin_username)
+  // console.log("action: ", action)
+  // console.log("reason: ", reason)
+  // console.log("impacted_user_id: ",impacted_user_id)
+  // console.log("impacted_username: ",impacted_username)
+
+
+  const now = new Date()
+  const newLog = {
+    admin_id: admin_id,
+    admin_username: admin_username,
+    action: action,
+    reason: reason,
+    impacted_user_id: impacted_user_id,
+    impacted_username: impacted_username,
+    createdAt: now,
+    og_content_id: og_content_id ?? null,
+  }
+
+  try {      
+    await addDoc(collection(db, "logs"), {
+    ...newLog,
+    createdAt: serverTimestamp()
+    });
+    toast.success("Log created successfully!");
+  } catch (error) {
+    toast.error("Error creating log. Please try again.");
+    console.error("Error creating log: ", error);
+  }
+}
+
+export async function fetchLogs(){
+  const snapshot = await getDocs(collection(db, "logs"))
+  return snapshot.docs.map((docSnap) =>{
+    const data = docSnap.data()
+    return {
+      id: docSnap.id,
+      admin_id: data.admin_id,
+      admin_username: data.admin_username,
+      action: data.action,
+      og_content_id: data.og_content_id ?? null,
+      reason: data.reason,
+      createdAt: data.createdAt,
+      impacted_user_id: data.impacted_user_id,
+      impacted_username: data.impacted_username,
+    }
+  })
 }
