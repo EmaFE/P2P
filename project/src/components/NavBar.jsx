@@ -2,7 +2,7 @@ import React from 'react'
 import RefNav from './RefNav'
 import peerIcon from '../assets/images/group.svg'
 import { useNavigate } from 'react-router-dom'
-import CrisisSupport from './CrisisSupport'
+import PopUp from './PopUp'
 
 import { auth } from "../config/firebase"
 import { signOut } from 'firebase/auth'
@@ -54,7 +54,7 @@ const NavBar = () =>{
         >Log Out</button>
         
       </div>
-      {open && <CrisisSupport onClose={() => setOpen(false)} />}
+      {open && <PopUp title="Crisis Support" text="Crisis contact to be obtained through cookie or default to irish (prefer 1st)" onClose={() => setOpen(false)} />}
 
         
       <button

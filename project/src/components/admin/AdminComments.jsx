@@ -29,6 +29,7 @@ export default function AdminComments(){
   const [filter, setFilter] = React.useState("All")
   const [expanded, setExpanded] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [refresh, setRefresh] = React.useState(0)
 
   React.useEffect(() =>{
       const fetchCommentsF = async () =>{
@@ -37,7 +38,7 @@ export default function AdminComments(){
         console.log("Fetched comments: ", fetchedComments)
       }
       fetchCommentsF();
-    }, [comments.length]); //fetch all comments, can be optimsied later if needed
+    }, [refresh]); //fetch all comments, can be optimsied later if needed
 
   const filteredComments = comments.filter((comment) =>{
     const matchesSearch = comment.content.toLowerCase().includes(search.toLowerCase()) || comment.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(comment.createdAt).toLowerCase().includes(search.toLowerCase()) 
@@ -49,14 +50,23 @@ export default function AdminComments(){
   })
 
    const handleDeleteComment = async (reason) => {
-    await deleteContent(deleteDialogOpen.id, reason, "comments", user.uid)
+    console.log("com id: ", user.uid)
+    await deleteContent(deleteDialogOpen.comment.id, reason, "comments", "deleted", user.uid)
     setComments((prev) => prev.filter((comment) => comment.id !== deleteDialogOpen.id))
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
   };
 
   const handleRestore = async (id) => {
     await dismiss(id, "comments", user.uid);
     setComments((prev) => prev.filter((comment) => comment.id !== id))
     // console.log("Restore comment with id: ", id)
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
   };
 
 

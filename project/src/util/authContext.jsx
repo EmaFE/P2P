@@ -1,25 +1,46 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../config/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../config/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { getUserByEmail } from "../config/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+
 
 export const Context = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let unsub = onAuthStateChanged(auth, (currentUser) => {
-      setLoading(false);
+      setLoading(false)
       if (currentUser){
         setUser(currentUser)
+        setLoading(false)
       } else{
         setUser(null)
+        setLoading(false)
+        return;
       } 
     });
-    return () => unsub();
-  }, []);
+    return () => unsub()
+  }, [])
+
+  //effect for banned users, if user is banned while logged in, they will be signed out and not able to log in again unless unbanned
+  useEffect(() => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid)
+    const unsub = onSnapshot(userRef, async (snap) => {
+      if (snap.data()?.status === "banned") {
+        await signOut(auth)
+        setUser(null)
+      }
+  })
+
+  return () => unsub()
+}, [user])
 
   return (
     <Context.Provider value={{ user, loading }}>
@@ -29,5 +50,5 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(Context);
+  return useContext(Context)
 }

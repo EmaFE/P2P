@@ -9,6 +9,7 @@ import ReasonDeleteDialog from "./ReasonDeleteDialog";
 import { deleteContent, fetchPosts, dismiss } from "@/config/firebase";
 import { Badge } from "../ui/badge";
 import { Context } from "@/util/authContext";
+import { auth } from "@/config/firebase";
 
 export default function AdminPosts(){
 
@@ -18,6 +19,7 @@ export default function AdminPosts(){
   const [filter, setFilter] = React.useState("All")
   const [expanded, setExpanded] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [refresh, setRefresh] = React.useState(0)
 
   React.useEffect(() =>{
       const fetchPostsF = async () =>{
@@ -26,7 +28,7 @@ export default function AdminPosts(){
         console.log("Fetched reports: ", fetchedPosts)
       }
       fetchPostsF();
-    }, [posts.length]); //fetch all posts, can be optimsied later if needed
+    }, [refresh]); //fetch all posts, can be optimsied later if needed
 
   const filteredPosts = posts.filter((post) =>{
     const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) || post.content.toLowerCase().includes(search.toLowerCase()) || post.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(post.createdAt).toLowerCase().includes(search.toLowerCase()) 
@@ -38,14 +40,24 @@ export default function AdminPosts(){
   })
 
    const handleDeletePost = async (reason) => {
+    console.log(user.uid)
+    console.log("Auth UID:", auth.currentUser?.uid);
     await deleteContent(deleteDialogOpen.post.id, reason, "posts","deleted", user.uid)
     setPosts((prev) => prev.filter((post) => post.id !== deleteDialogOpen.id))
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
   }
 
   const handleRestore = async (id) => {
     await dismiss(id, "posts", user.uid);
     setPosts((prev) => prev.filter((post) => post.id !== id))
     console.log("Restore post with id: ", id)
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
   }
 
 

@@ -7,11 +7,13 @@ import { validateEmail, checkPassword } from '../../util/helper'
 import logImage from '../../assets/images/logIn.jpg'
 
 import { auth, db } from "../../config/firebase"
-import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup, signOut } from 'firebase/auth'
 import {doc, getDoc, setDoc, serverTimestamp} from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { getUserByEmail } from '../../config/firebase'
+import PopUp from '@/components/PopUp'
 
 import { toast } from "sonner";
 
@@ -24,6 +26,9 @@ const LogIn = () =>{
   const[error, setError] = React.useState('')
   const[termsAccepted, setTermsAccepted] = React.useState(false)
   const [termsOpen, setTermsOpen] = React.useState(false)
+  const [susOpen, setSusOpen] = React.useState(false)
+  const [banOpen, setBanOpen] = React.useState(false)
+  const [loading, setLoading] = React.useState(true)
 
   let navigate = useNavigate()
 
@@ -42,9 +47,32 @@ const LogIn = () =>{
     }
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/")
+      const userDB = await getUserByEmail(email);
+
+      if (userDB.status === "banned") {
+        await signOut(auth);
+        setBanOpen(true);
+        return;
+      }
+
+      if (userDB.status === "suspended") {
+        setSusOpen(true);
+      }
+
+      if (userDB.role && userDB.role === "admin"){
+        navigate("/admin")
+      }
+     
+      setLoading(false)
+
+      if(!loading && !susOpen){
+        navigate("/")
+      }
+
     } catch (error) {
-      console.error(error)
+      console.error("error logging in message: ", error.message)
+      console.error("error logging in code: ", error.code)
+      toast.error("Invalid credentials")
     }
     
   }
@@ -59,8 +87,16 @@ const LogIn = () =>{
           const result = await signInWithPopup(auth, provider);
           const user = result.user;
 
+          
           //check if user already exists in firestore
           const userDoc = await getDoc(doc(db, "users", user.uid));
+
+          if(userDoc?.status === "suspended"){
+            setSusOpen(true)
+          }
+          if(userDoc?.status === "banned"){
+            setBanOpen(true)
+          }
 
           if (!userDoc.exists()) {
             //first time => generate username and create document
@@ -70,6 +106,10 @@ const LogIn = () =>{
               email: user.email,
               username: randomUsername,
               createdAt: serverTimestamp(),
+              status: "active",
+              role: "user",
+              reportCount: 0,
+              suspendCount: 0,
             });
           }
         } catch(error){
@@ -152,6 +192,10 @@ const LogIn = () =>{
               </Field>
           </FieldGroup>
 
+          {susOpen && <PopUp title="Suspended User" text="Your account has been suspended. You cannot create, and delete posts or comments until the suspension is lifted. You can only read posts and comments. Log in again to access the platform." onClose={() => setSusOpen(false)} />}
+            
+          {banOpen && <PopUp title="Banned User" text="Your account has been banned. You cannot access the platform anymore." onClose={() => setBanOpen(false)} />}
+
           <button
             type='submit'
             className='w-full text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-secondary)] rounded-lg px-6 py-3 mt-4 mb-6 shadow-lg shadow-grey-100 cursor-pointer'
@@ -177,7 +221,7 @@ const LogIn = () =>{
           </button>
         </form>
       </div>
-    </AuthLayout>
+    </AuthLayout>    
   )
 }
 

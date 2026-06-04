@@ -78,6 +78,10 @@ const SignUp = () =>{
             username: username,
             email: email,
             createdAt: serverTimestamp(),
+            status: "active",
+            role: "user",
+            reportCount: 0,
+            suspendCount: 0,
           });
           navigate("/")
         } catch(error){
@@ -108,6 +112,10 @@ const SignUp = () =>{
               email: user.email,
               username: randomUsername,
               createdAt: serverTimestamp(),
+              status: "active",
+              role: "user",
+              reportCount: 0,
+              suspendCount: 0,
             });
           }
         } catch(error){

@@ -17,6 +17,7 @@ export default function AdminReports(){
   const [reports, setReports] = React.useState([])
   const [expanded, setExpanded] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [refresh, setRefresh] = React.useState(0)
 
 
   React.useEffect(() =>{
@@ -28,25 +29,31 @@ export default function AdminReports(){
       const reportedPosts2 = fetchedPosts2.filter(post => post.status === "reported");
       const reportedComments = fetchedComments.filter(comment => comment.status === "reported");
       setReports([...reportedPosts, ...reportedPosts2, ...reportedComments])
-      // setReports( prev => [...prev, reportedPosts2]);
-      // setReports( prev => [...prev, comments]);
-
-      console.log("Fetched reports: ", reports)
+      // console.log("Fetched reports: ", reports)
     }
     fetchReports();
-  }, [reports.length]); //fetch all posts and filter for reported ones since theres no separate collection for reports, can be optimsied later if needed
+  }, [refresh]); //fetch all posts and filter for reported ones since theres no separate collection for reports, can be optimsied later if needed
 
   const handleDismiss = async (reportId, collection) =>{
-    await dismiss(reportId, collection, user.id, user.username)
+    // console.log("report id: ", reportId, " collection: ", collection, " user id: ", user.uid)
+    await dismiss(reportId, collection, user.uid)
     setReports((prev) => prev.filter((report) => report.id !== reportId))
-    console.log("Dimissing report with id: ", reportId)
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
+    // console.log("Dimissing report with id: ", reportId)
   }
 
   const handleDeleteReport = async (reason) => {
     const collection = deleteDialogOpen.tags ? "posts" :  "comments"
-    await deleteContent(deleteDialogOpen.id, reason, collection, "deleted", user.id, user.username)
+    await deleteContent(deleteDialogOpen.id, reason, collection, "deleted", user.uid)
     setReports((prev) => prev.filter((report) => report.id !== deleteDialogOpen.id))
-    console.log("Deleting content for report with id: ", deleteDialogOpen.id, " with reason: ", reason)
+    setRefresh((prev) => prev + 1)
+    if (refresh === 10){
+      setRefresh(0)
+    }
+    // console.log("Deleting content for report with id: ", deleteDialogOpen.id, " with reason: ", reason)
   }
 
 

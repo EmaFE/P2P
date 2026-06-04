@@ -21,12 +21,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 
-export async function fetchPosts(category, user) {
+export async function fetchPosts(categoryN, user) {
   let q;
-  category = category.toLowerCase();
-  console.log("fetch posts from firbease called: ", category, user.uid)
+  categoryN = categoryN.toLowerCase();
+  console.log("fetch posts from firbease called: ", categoryN, user.uid)
 
-  if (category === "reflections") {
+  if (categoryN === "reflections") {
     q = query(
       collection(db, "posts"),
       where("category", "==", "reflections"),
@@ -35,7 +35,7 @@ export async function fetchPosts(category, user) {
   } else {
     q = query(
       collection(db, "posts"),
-      where("category", "!=", "reflections")
+      where("category", "==", categoryN),
     );
   }
 
@@ -209,25 +209,45 @@ export async function handleBookmarkComment(commentId, bookmarked, postId, userI
 }}
 
 export async function reportPost(postId) {
-  const postData = await fetchPostById(postId);
-  if (postData?.status === "active"){
-      const postRef = doc(db, "posts", postId);
-      await updateDoc(postRef, { status: "reported"});
-      toast.success("Post reported. Thank you for helping to keep the community safe!")
-  } else {
-      toast.success("Post has already been reported and is under review. Thank you for helping to keep the community safe!")
+  try{
+    const postData = await fetchPostById(postId);
+    if (postData?.status === "active"){
+        const postRef = doc(db, "posts", postId);
+        await updateDoc(postRef, { status: "reported"});
+        toast.success("Post reported. Thank you for helping to keep the community safe!")
+        const userDoc = await getDoc(doc(db, "users", postData.uid));
+        if (userDoc.exists()) {
+          await updateDoc(userDoc.ref, { reportCount: increment(1) });
+          //await updateDoc(doc(db, "users", postData.uid), { reportCount: increment(1) });
+        }
+      } else {
+          toast.success("Post has already been reported and is under review. Thank you for helping to keep the community safe!")
+      }
+  } catch (error){  
+    console.log("error reporting post: ", error)
+    toast.error("Could not report post. Please try again.")
   }
 }
 
 export async function reportComment(commentId) {
-  const commentData = await fetchCommentById(commentId);
-  if (commentData?.status === "active"){
-      const commentRef = doc(db, "comments", commentId);
-      await updateDoc(commentRef, { status: "reported"});
-      toast.success("Comment reported. Thank you for helping to keep the community safe!")
-  } else {
-      toast.success("Comment has already been reported and is under review. Thank you for helping to keep the community safe!")
+  try{
+    const commentData = await fetchCommentById(commentId);
+    if (commentData?.status === "active"){
+        const commentRef = doc(db, "comments", commentId);
+        await updateDoc(commentRef, { status: "reported"});
+        toast.success("Comment reported. Thank you for helping to keep the community safe!")
+        const userDoc = await getDoc(doc(db, "users", commentData.uid));
+        if (userDoc.exists()) {
+          await updateDoc(userDoc.ref, { reportCount: increment(1) });
+        }
+    } else {
+        toast.success("Comment has already been reported and is under review. Thank you for helping to keep the community safe!")
+    }
+  } catch (error){  
+    console.log("error reporting comment: ", error)
+    toast.error("Could not report comment. Please try again.")
   }
+
 }
 
 export async function fetchComments(postId) {
@@ -355,6 +375,19 @@ export async function getUser(){
   if(!currUser) return null;
   const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", currUser.uid)));
   console.log(userDoc.docs[0]?.data()?.uid)  
+  return userDoc.docs[0]?.data()
+}
+
+export async function getUserByEmail(email){
+  const userDoc = await getDocs(query(collection(db, "users"), where ("email", "==", email)))
+  console.log(userDoc.docs[0]?.data()?.role)
+  return userDoc.docs[0]?.data()
+}
+
+export async function getUserById(uid){
+  console.log("getUserById called with uid: ", uid)
+  const userDoc = await getDocs(query(collection(db, "users"), where ("uid", "==", uid)))
+  console.log(userDoc.docs[0]?.data()?.role)
   return userDoc.docs[0]?.data()
 }
 
@@ -588,33 +621,52 @@ export async function deleteLike (likeId, postId){
 }
 
 export async function dismiss(id, collection, admin_id){
-  const admin = await getUser(admin_id)
+  const admin = await getUserById(admin_id)
+  console.log("admin", admin)
   let data
   try {
     const ref = doc(db, collection, id);
     await updateDoc(ref, { status: "active", deletionReason: "" })
     toast.success("Content successfully dismissed / restored!")
+
+    //if a comment is restored, increment the comment count on the post
     const snapshot = await getDoc(ref)
     data = snapshot.data()
+    if (collection === "comments") {
+      const postRef = doc(db, "posts", data.postId)
+      await updateDoc(postRef, { commentsCount: increment(1) })
+    }
+
   } catch (error) {
     toast.error("Could not dismiss content. Please try again.")
     console.log("error dismissing content: ", error)
   } finally {
-    console.log("admin_id from dismiss: ", admin_id)
-    console.log("admin_username from dismiss: ", admin.username)
     createLog(collection, admin_id, admin.username, id, data.uid, data.username, "dismiss")
   }
 }
 
 export async function deleteContent (id, reason, collection, status, admin_id){
-  const admin = await getUser(admin_id)
+  console.log("Auth UID:", auth.currentUser?.uid);
+  const admin = await getUserById(admin_id)
   let data
   try {
     const ref = doc(db, collection, id)
+   // console.log("before update doc, ref: ", ref)
     await updateDoc(ref, { status: status, deletionReason: reason })
+    //console.log("after update")
     toast.success("Content successfully deleted!")
+     //if a comment is deleted, decrement the comment count on the post
     const snapshot = await getDoc(ref)
     data = snapshot.data()
+    // console.log("post id from com: ", data.postId)
+    // console.log("data form user: ", data.uid)
+     if (collection === "comments") {
+      const postRef = doc(db, "posts", data.postId)
+      await updateDoc(postRef, { commentsCount: increment(-1) })
+    }
+    if (collection === "users"){
+      await updateDoc(ref, { suspendCount: increment(1) })
+    }
   }
   catch (error){
     toast.error("Could not delete content. Please try again.")
@@ -651,15 +703,14 @@ export async function  createLog(collectionName, admin_id, admin_username, og_co
       else if (collectionName === "comments") { action = "restored_comment" }
         else action = "dismissed_report"
   }
- 
-  // console.log("admin_id: ", admin_id)
+
+  //  console.log("admin_id: ", admin_id)
   // console.log("admin_username: ", admin_username)
   // console.log("action: ", action)
   // console.log("reason: ", reason)
   // console.log("impacted_user_id: ",impacted_user_id)
   // console.log("impacted_username: ",impacted_username)
-
-
+ 
   const now = new Date()
   const newLog = {
     admin_id: admin_id,

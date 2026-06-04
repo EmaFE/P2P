@@ -1,6 +1,6 @@
 import React from 'react'
 
-const CrisisSupport = ({onClose}) =>{
+const PopUp = ({onClose, title, text}) =>{
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-xs bg-black/10">
       <div className="absolute inset-0 z-[9999]  "
@@ -8,10 +8,8 @@ const CrisisSupport = ({onClose}) =>{
       />
 
       <div className="relative bg-white rounded-xl z-10 p-6 max-w-sm w-full">
-        <h2 className="text-lg font-semibold">Crisis Contact</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Crisis contact to be obtained through cookie or default to irish (prefer 1st)
-        </p>
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="mt-2 text-sm text-gray-600">{text}</p>
 
         <button
           onClick={onClose}
@@ -24,4 +22,4 @@ const CrisisSupport = ({onClose}) =>{
   );
 }
 
-export default CrisisSupport
+export default PopUp

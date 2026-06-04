@@ -9,7 +9,6 @@ import encryption from '../assets/images/encryption.svg'
 import ai from '../assets/images/ai.svg'
 import human from '../assets/images/human.svg'
 import anonymous from '../assets/images/anonymous.svg'
-import CrisisSupport from '../components/CrisisSupport'
 import { useAuth } from "../util/authContext"
 
 const Home = () =>{

@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button"
 import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent, ComboboxTrigger } from "./ui/combobox"
-import CrisisSupport from "./CrisisSupport";
+import CrisisSupport from "./PopUp";
 
 const NavSideBar = () =>{
 
