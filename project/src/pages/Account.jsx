@@ -6,7 +6,7 @@ import  MyActivity  from "./MyActivity";
 import  AccountSettings  from "./AccountSettings";
 import { getUser, getUserName } from "@/config/firebase";
 import { Context } from "../util/authContext"
-import NavSideBar from "./NavSideBar";
+import NavSideBar from "../components/NavSideBar";
 import image from "@/assets/images/bg_msg_clean.svg"
 export default function Account () {
 

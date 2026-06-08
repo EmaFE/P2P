@@ -1,6 +1,6 @@
 import React from "react";
 import NavSideBar from "../../components/NavSideBar";
-import CommunityPage from "./CommunityPage";
+import CommunityPage from "../CommunityPage";
 import image from "@/assets/images/bg_msg_clean.svg"
 
 const CommunityLayout = ({name, description, categories, filterOptions, sortOptions}) =>{

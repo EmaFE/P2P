@@ -1,17 +1,17 @@
 import { Filter, Plus} from "lucide-react";
 import React, { useState } from "react";
-import { SheetContent, SheetTrigger, Sheet } from "../../components/ui/sheet";
-import { ScrollArea } from "../../components/ui/scroll-area";
-import { Button } from "../../components/ui/button";
-import { useIsMobile } from "../../util/useIsMobile"
+import { SheetContent, SheetTrigger, Sheet } from "../components/ui/sheet";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Button } from "../components/ui/button";
+import { useIsMobile } from "../util/useIsMobile"
 import { cn } from "@/lib/utils"
-import Post from "../../components/Post";
-import NewPostWindow from "../../components/NewPostWindow";
-import FilterSortSideBar from "../../components/FilterSortSideBar";
+import Post from "../components/Post";
+import NewPostWindow from "../components/NewPostWindow";
+import FilterSortSideBar from "../components/FilterSortSideBar";
 import { useAuth } from "@/util/authContext";
 import { onAuthStateChanged } from "firebase/auth"
 import { collection, getDocs, onSnapshot, query, addDoc, where, serverTimestamp} from "firebase/firestore";
-import { db, fetchPosts, createPost, auth, getUserById} from "../../config/firebase";
+import { db, fetchPosts, createPost, auth, getUserById} from "../config/firebase";
 import PopUp from "@/components/PopUp";
 
 const CommunityPage = ({communityName, description, categories, filterOptions, sortOptions}) =>{

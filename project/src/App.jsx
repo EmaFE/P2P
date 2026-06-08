@@ -19,7 +19,7 @@ import Grief from './pages/communities/Grief'
 import Uni from './pages/communities/Uni'
 import { Toaster } from 'sonner'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import Account from './components/Account'
+import Account from './pages/Account'
 import Admin from './pages/Admin'
 import ScrollTop from './components/ScrollTop'
 

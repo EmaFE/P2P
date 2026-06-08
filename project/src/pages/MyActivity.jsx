@@ -10,8 +10,8 @@
 
 import React from "react";
 import { useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { Button } from "./ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
+import { Button } from "../components/ui/button";
 import { Heart, FileText, MessageCircle, Bookmark, ChevronDown, ChevronUp, Loader, X, Trash2 } from "lucide-react"
 import { fetchPostsByUser, fetchCommentsByUser, fetchCommentById, fetchBookmarksByUser, fetchLikesByUser, fetchPostById, deleteComment, deletePost, deleteLike, deleteBookmark, deleteContent, getUserById } from "@/config/firebase"
 import { toast } from 'sonner'
