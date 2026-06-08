@@ -1,100 +1,93 @@
-
-// import React from "react";
-
-// export function AccountSettings () {
-
-//   return(
-//     <div>Account Settings</div>
-//   )
-// }
-
-
-
-import { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import React from "react"
+import { useState, useEffect } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, ChevronDown, Check, Loader } from "lucide-react";
 import { toast } from "sonner";
 import { reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, getAuth, updatePassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/config/firebase";
+import { db, getUserById } from "@/config/firebase";
+import PopUp from "./PopUp";
+import { useAuth } from "@/util/authContext";
 
 
-function UpdateEmail({ user }) {
-  const [open, setOpen] = useState(false);
-  const [currentEmail, setCurrentEmail] = useState("");
-  const [verifiedEmail, setVerifiedEmail] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
-  const [loadingInput, setloadingInput] = useState(false);  
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [verifiedPassword, setVerifiedPassword] = useState(false);
+function UpdateEmail({ userDB }) {
+
+  // console.log("userdb from update email: ", userDB.email)
+
+  const [open, setOpen] = useState(false)
+  const [currentEmail, setCurrentEmail] = useState("")
+  const [verifiedEmail, setVerifiedEmail] = useState(false)
+  const [newEmail, setNewEmail] = useState("")
+  const [loadingInput, setloadingInput] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [verifiedPassword, setVerifiedPassword] = useState(false)
 
 
   const handleVerifyEmail = () => {
-    if (currentEmail.trim().toLowerCase() === user.email?.toLowerCase()) {
-      setVerifiedEmail(true);
+    if (currentEmail.trim().toLowerCase() === userDB.email?.toLowerCase()) {
+      setVerifiedEmail(true)
     }
   };
 
   const reauthenticate = async () => {
-    if(!currentPassword.trim()) return;
-    setloadingInput(true);
+    if(!currentPassword.trim()) return
+    setloadingInput(true)
     try{
-      const credential = EmailAuthProvider.credential(user.email, currentPassword.trim());
-      await reauthenticateWithCredential(user, credential);
-      setVerifiedPassword(true);
-      console.log("reauth")
+      const credential = EmailAuthProvider.credential(userDB.email, currentPassword.trim())
+      await reauthenticateWithCredential(userDB, credential)
+      setVerifiedPassword(true)
+      // console.log("reauth")
     } catch(error){
       console.log(error)
     } finally {
-      setloadingInput(false);
+      setloadingInput(false)
     }
   }
 
   const handleUpdateEmail = async () => {
-    if (!newEmail.trim()) return;
-    setloadingInput(true);
+    if (!newEmail.trim()) return
+    setloadingInput(true)
     
     try{
-      await verifyBeforeUpdateEmail(user, newEmail.trim());
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { email: newEmail.trim() });
-      toast.success("Email updated!");
-      setOpen(false);
+      await verifyBeforeUpdateEmail(userDB, newEmail.trim())
+      const userRef = doc(db, "users", userDB.uid)
+      await updateDoc(userRef, { email: newEmail.trim() })
+      toast.success("Email updated!")
+      setOpen(false)
       setVerifiedEmail(false);
-      setVerifiedPassword(false);
-      setCurrentPassword("");
-      setCurrentEmail("");
-      setNewEmail("");
+      setVerifiedPassword(false)
+      setCurrentPassword("")
+      setCurrentEmail("")
+      setNewEmail("")
     } catch (error) {
-      console.log("error updating email: ", error);
-      toast.error("Could not update email");
+      console.log("error updating email: ", error)
+      toast.error("Could not update email")
     } finally {
-      setloadingInput(false);
+      setloadingInput(false)
     }
   };
 
   //everytime the colappsable element reopens, these inputs will be empty
   const checkNewVal = (newVal) =>{
     if(!newVal){
-      setVerifiedEmail(false);
-      setCurrentEmail("");
-      setNewEmail("");
+      setVerifiedEmail(false)
+      setCurrentEmail("")
+      setNewEmail("")
     }
   };
 
   return (
     <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal);}}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-card-foreground hover:bg-accent/50 transition-colors">
-        <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /> Update Email</span>
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-[var(--color-six)] hover:text-white hover:font-normal transition-colors">
+        <span className="flex items-center gap-2">
+          <Mail className="h-4 w-4 group-hover:text-white transition-colors" /> 
+          Update Email
+          </span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
+      {(userDB?.status === "active") &&<CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Current Email</label>
           <div className="flex gap-2 mt-1">
@@ -146,32 +139,32 @@ function UpdateEmail({ user }) {
           </div>
         )}
         
-      </CollapsibleContent>
+      </CollapsibleContent>}
     </Collapsible>
-  );
+  )
 }
 
-function ChangePassword({ user }) {
-  const [open, setOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [verifiedPassword, setVerifiedPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loadingInput, setloadingInput] = useState(false);
+function ChangePassword({ userDB }) {
+  const [open, setOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [verifiedPassword, setVerifiedPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [loadingInput, setloadingInput] = useState(false)
 
 
   const reauthenticate = async () => {
     if(!currentPassword.trim()) return;
     setloadingInput(true);
     try{
-      const credential = EmailAuthProvider.credential(user.email, currentPassword.trim());
-      await reauthenticateWithCredential(user, credential);
-      setVerifiedPassword(true);
-      console.log("reauth")
+      const credential = EmailAuthProvider.credential(userDB.email, currentPassword.trim())
+      await reauthenticateWithCredential(userDB, credential)
+      setVerifiedPassword(true)
+      // console.log("reauth")
     } catch(error){
       console.log(error)
     } finally {
-      setloadingInput(false);
+      setloadingInput(false)
     }
   }
 
@@ -188,36 +181,39 @@ function ChangePassword({ user }) {
     
     try{
       await updatePassword(getAuth().currentUser, newPassword);
-      toast("Password updated!");
-      setOpen(false);
-      setVerifiedPassword(false);
-      setConfirmPassword("");
-      setCurrentPassword("");
-      setNewPassword("");
+      toast("Password updated!")
+      setOpen(false)
+      setVerifiedPassword(false)
+      setConfirmPassword("")
+      setCurrentPassword("")
+      setNewPassword("")
     } catch (e) {
       toast.error("password not updated.")
     } finally {
-      setloadingInput(false);
+      setloadingInput(false)
     }
   };
 
   //everytime the colappsable element reopens, these inputs will be empty
   const checkNewVal = (newVal) =>{
     if(!newVal){
-      setVerifiedPassword(false);
-      setConfirmPassword("");
-      setCurrentPassword("");
-      setNewPassword("");
+      setVerifiedPassword(false)
+      setConfirmPassword("")
+      setCurrentPassword("")
+      setNewPassword("")
     }
-  };
+  }
 
   return (
     <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal); checkNewVal(newVal); }}>
-      <CollapsibleTrigger open={open} onOpenChange={(newVal) => { setOpen(newVal); checkNewVal(newVal); }} className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-card-foreground hover:bg-accent/50 transition-colors">
-        <span className="flex items-center gap-2"><Lock className="h-4 w-4 text-muted-foreground" /> Change Password</span>
+       <CollapsibleTrigger open={open} onOpenChange={(newVal) => { setOpen(newVal); checkNewVal(newVal); }} className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-[var(--color-six)] hover:text-white hover:font-normal transition-colors">
+        <span className="flex items-center gap-2">
+          <Lock className="h-4 w-4 group-hover:text-white transition-colors" /> 
+          Change Password
+        </span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
+      { (userDB?.status === "active") && <CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Current Password</label>
           <div className="flex gap-2">
@@ -260,16 +256,38 @@ function ChangePassword({ user }) {
             </Button>
           </div>
         )}
-      </CollapsibleContent>
+      </CollapsibleContent>}
     </Collapsible>
-  );
-}
+  )}
 
-  export default function AccountSettings({ user }) {
+  export default function AccountSettings() {
+    // console.log("user from account settings USER: ", user)
+
+    const { user } = useAuth();
+    // console.log("user from account settings USER: ", user)
+    const [userDB, setUserDB] = useState(null)
+    const [open, setOpen] = useState(false)
+
+    React.useEffect( () =>{
+      // console.log("lakjblcabcj")
+      if (!user) return;
+      const fetchUser = async () =>{
+        // console.log("BEFORE GET USER BY ID")
+        const userdb = await getUserById(user.uid);
+        // console.log("userdb: from effect: ", userdb)
+        setUserDB(userdb);
+        if (userdb.status !== "active") setOpen(true)
+      }
+      fetchUser()
+    }, [user.uid]);
+
+
   return (
     <div className="space-y-3">
-      <UpdateEmail user={user}/>
-      <ChangePassword user={user}/>
+      {userDB?.status != "active" && open && <PopUp onClose={() => setOpen(false)} title="Account Suspended" text="Your account is currently suspended. You cannot change your email or password at this time." /> }
+      {userDB && <UpdateEmail userDB={userDB}/> }
+      {userDB && <ChangePassword userDB={userDB}/> }
+
     </div>
   );
 }

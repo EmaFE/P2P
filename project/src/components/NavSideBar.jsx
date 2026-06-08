@@ -1,16 +1,24 @@
 import React from "react";
-import { Users, MessageSquare, User, Menu, X, House } from "lucide-react";
+import { Users, Shield, User, Menu, X, LogOut, House, Phone } from "lucide-react";
 import { useIsMobile } from "../util/useIsMobile";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button"
 import { Combobox, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxContent, ComboboxTrigger } from "./ui/combobox"
-import CrisisSupport from "./PopUp";
+import PopUp from "./PopUp";
+import CommunityRules from "./CommunityRules";
+import { useNavigate } from "react-router-dom";
+import { logOut } from "../config/firebase";
 
 const NavSideBar = () =>{
 
-  const [messagesOpen, setMessagesOpen] = React.useState(false)
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [crisisOpen, setCrisisOpen] = React.useState(false);
+  const [rulesOpen, setRulesOpen] = React.useState(false)
 
+  const navigate = useNavigate();
+  
   const communities = [
     {title: "Anxiety", url: "/community/anxiety" },
     {title: "Grief", url: "/community/grief" },
@@ -19,43 +27,45 @@ const NavSideBar = () =>{
 
   const items = [
     {title: "Communities", url: "/communities", icon: Users, type:"link"},
-    {title: "Messages", url: "/messages", icon: MessageSquare, type:"action"},
     {title: "Account", url: "/account", icon: User, type:"link"},
-    {title: "Home", url:"/", icon:House, type:"link"}
+    {title: "Home", url:"/", icon:House, type:"link"},
+    {title: "Rules", icon: Shield, type:"action"},
+    {title: "Crisis Support", icon: Phone, type:"action"},
+    {title: "Log Out", url: "/login", icon: LogOut, type:"action"}
   ]
 
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = React.useState(false);
-  
   const toggleSidebar = () =>{
-    setIsOpen(!isOpen);
+    setIsOpen(prev => !prev);
   }
 
   const sidebarContent = (
-      <nav className="sticky flex flex-col h-screen gap-2 p-4 mt-1">
+      <nav className="sticky flex flex-col h-screen gap-2 p-4 z-[100] bg-white">
+        { rulesOpen && <CommunityRules open={rulesOpen} onOpenChange={setRulesOpen} /> }
+        { crisisOpen && <PopUp title="Crisis Support" text="Please contact 112 for professional help" onClose={() => setCrisisOpen(false)} />}
         {
           items.map((item) =>{
             if (item.title === "Communities"){
               return (
                 <Combobox key={item.title} communities={communities}>
                   <ComboboxTrigger>
-                    <div className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:cursor-pointer hover:shadow-md ">
+                    <div className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:text-white hover:bg-[var(--color-six)] hover:cursor-pointer hover:shadow-md cursor-pointer ">
                       <item.icon className="h-5 w-5" />
                       <span className="text-sm font-medium">Communities</span>
                     </div>
                   </ComboboxTrigger>
 
                   <ComboboxContent>
-                    <ComboboxList>
+                    <ComboboxList >
                       {communities?.map((community) => (
-                        <NavLink
+                        community.url &&  <NavLink
                             to={community.url}
-                            className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:cursor-pointer hover:shadow-md"
+                            className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:cursor-pointer hover:shadow-md"
                           >
-                        <ComboboxItem key={community.title} value={community.title}>
+                        <ComboboxItem key={community.title} value={community.title} 
+                          className="hover:bg-[var(--color-six)] hover:text-white" >
                           
-                            <item.icon className="h-5 w-5" />
-                            <span className="text-sm font-medium text-pink-800">{community.title}</span>
+                            <item.icon className="h-5 w-5 hover:text-white" />
+                            <span className="text-sm font-medium  hover:text-white">{community.title}</span>
                           
                         </ComboboxItem>
                         </NavLink>
@@ -65,20 +75,26 @@ const NavSideBar = () =>{
                 </Combobox>
               )
             } else if (item.type === "action"){
-                return(<button key={item.title} size="sm" className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 hover:bg-slate-300 hover:shadow-md" 
-                   onClick={(e) =>{
-                e.preventDefault()
-                console.log(`Clicked on ${item.title}`)
-                setMessagesOpen(true)
-                }}>
-                <item.icon className="h-5 w-5" />
-                <span className="text-sm font-medium">{item.title}</span>
-              </button>)
-            }
+                return(
+                  <button key={item.title} size="sm" 
+                    className={cn(`flex ${item.title==="Rules" ? "mt-auto" : ""} gap-3 px-4 py-3 rounded-lg text-pink-800 hover:text-white hover:bg-[var(--color-six)] hover:shadow-md cursor-pointer`)}
+                    onClick={(e) =>{
+                  e.preventDefault()
+                // console.log(`Clicked on ${item.title}`)
+                  if (item.title === "Crisis Support") setCrisisOpen(true)
+                  else if (item.title === "Rules") setRulesOpen(true)
+                  else if (item.title === "Log Out") {
+                    logOut(),
+                    navigate(item.url)}
+                  }}>
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-sm font-medium">{item.title}</span>
+                </button>)
+              }
             return <NavLink
               key={item.title}
               to={item.url}
-              className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:bg-slate-300 hover:shadow-md"
+              className="flex gap-3 px-4 py-3 rounded-lg text-pink-800 transition-all hover:text-white hover:bg-[var(--color-six)] hover:shadow-md"
             >
               <item.icon className="h-5 w-5"/>
               <span className="text-sm font-medium">{item.title}</span>
@@ -89,13 +105,9 @@ const NavSideBar = () =>{
       
    )
 
-
-   
-
  if (isMobile) {
     return (
       <>
-      {console.log("NavSideBar mounted")}
         {/*hamburger button - fixed position */}
         <Button
           variant="ghost"
@@ -103,19 +115,14 @@ const NavSideBar = () =>{
           className="fixed top-4 left-4 z-50 shadow-md"
           onClick={toggleSidebar}
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? <X className="h-5 w-5 z-[100]" /> : <Menu className="h-5 w-5" />}
         </Button>
-        {/*overlay */}
-        {isOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
+        
+        
         {/*slide-in sidebar */}
         <aside
           className={cn(
-            "fixed top-0 left-0 h-full w-64 border-r z-50 transform transition-transform duration-300 ease-in-out",
+            "fixed overflow-y h-full top-0 left-0 w-64 border-r z-10  bg-white transform transition-transform duration-300 ease-in-out",
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -125,7 +132,7 @@ const NavSideBar = () =>{
     );
   }
   return (
-    <aside className="sticky top-0 h-screen w-64 bg-background border-r flex-shrink-0">
+    <aside className="sticky top-0 h-screen w-64 border-r flex-shrink-0">
       {sidebarContent}
     </aside>
   );

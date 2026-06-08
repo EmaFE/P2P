@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { Heart, MessageCircle, MoreHorizontal, Bookmark, Flag, Share2, ChevronUp, Plus, ChevronDown } from "lucide-react";
 import { getRelativeTime } from "../lib/relative-time";
-import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createPost, createComment, isBookmarkedByUser, getUser } from "../config/firebase";
+import { toggleLikePost, reportPost, fetchComments, db, isLikedByUser, handleBookmarkPost, createPost, createComment, isBookmarkedByUser, getUserById } from "../config/firebase";
 import CommentThread from "./Comment";
 import ReplyWindow from "./ReplyWindow";
 import { collection, getDocs, query, where, onSnapshot, doc } from "firebase/firestore";
@@ -41,6 +41,7 @@ export function buildCommentTree(comments, rootId) {
 export default function Post({ id, title, content, username, createdAt, likes, commentsCount, tags, category, onUserClick, status }) {
   //console.log("commentsCount: ", commentsCount)
   const { user } = useAuth();
+  const [userDB, setUserDB] = useState(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes ?? 0);
   const [bookmarked, setBookmarked] = useState(false);
@@ -50,6 +51,8 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const [commentsData, setCommentsData] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
+  const [suspended, setSuspended] = useState(false);
+  const [open, setOpen] = useState(false)
 
   const needsTruncation = content.length > MAX_CONTENT_LENGTH;
 
@@ -59,11 +62,24 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   
   const visibleTags = tagsExpanded ? tags : tags?.slice(0, MAX_VISIBLE_TAGS);
   
-   const commentTree = commentsData ? buildCommentTree(commentsData, id) : null;
-   //console.log(JSON.stringify(commentTree, null, 2));
+  const commentTree = commentsData ? buildCommentTree(commentsData, id) : null;
+
+  const isSuspended = userDB?.status !== "active";
+  //console.log(JSON.stringify(commentTree, null, 2));
+  
+  // React.useEffect(() => {
+  //   if (userDB.status !== "active") {
+  //     setSuspended(true);
+  //     setOpen(true);
+  //   }
+  // }, [userDB.status]);
 
   const handleLike = async () => {
     //console.log("likeCount before update: " + likeCount)
+    if (isSuspended) {
+      toast.error("Your account is currently suspended. You cannot like posts/comments at this time.")
+      return;
+    }
     const prevLiked = liked;
     const newLiked = !liked;
     setLiked(newLiked);
@@ -75,19 +91,6 @@ export default function Post({ id, title, content, username, createdAt, likes, c
       setLikeCount((prev) => prev + (newLiked ? -1 : 1));
     }
   };
-
-  // React.useEffect(() =>{
-
-  //   if(!id || !user?.uid) return;
-
-  //   const postRef = doc(db, "posts", id);
-  //   const unsubscribe = onSnapshot(postRef, (docSnap) => {
-  //     if (docSnap.exists()) {
-  //       setLikeCount(docSnap.data().likes);
-  //     }
-  // });
-  //   return () => unsubscribe()
-  // }, [id])
 
   React.useEffect( () =>{
     if (!id || !user?.uid) return;
@@ -114,29 +117,48 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   }, [id, user?.uid]); //runs user.uid changes
 
+     React.useEffect( () =>{
+        if (!user) return;
+        const fetchUser = async () =>{
+          const userdb = await getUserById(user.uid);
+        setUserDB(userdb);
+        }
+        fetchUser()
+      }, [user.uid]);
+
   
   const toggleBookmark = async () => {
+    if (isSuspended) {
+      toast.error("Your account is currently suspended. You cannot bookmark posts/comments at this time.")
+      return;
+    }
     setBookmarked(prev => !prev);
     if (!id) return;
-    const userDoc = await getDocs(
-      query(collection(db, "users"), where("uid", "==", user.uid))
-    );
-    const userId = userDoc.docs[0]?.data()?.uid;
-    await handleBookmarkPost(id, !bookmarked, userId);
+
+    await handleBookmarkPost(id, !bookmarked, user.uid);
   };
 
 
   const handleReplyToPost = () => {
+    if (isSuspended) {
+      toast.error("Your account is currently suspended. You cannot reply to posts/comments at this time.")
+      return;
+    }
     const postComment = {
       username,
       content: title + (content ? "\n" + content : ""),
       createdAt,
+      status,
     }
     setReplyTarget(postComment);
   };
 
   //handle replies to post, NOT comments 
   const handlePostReplySubmit = async (text) => {
+    if (isSuspended) {
+      toast.error("Your account is currently suspended. You cannot reply to comments at this time.")
+      return;
+    }
 
     const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
     const userName = userDoc.docs[0]?.data()?.username;
@@ -172,6 +194,10 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   }
 
   const handleReport = async () => {
+    if (isSuspended) {
+      toast.error("Your account is currently suspended. You cannot make reports at this time.")
+      return;
+    }
     reportPost(id);
   };
 
@@ -179,13 +205,11 @@ export default function Post({ id, title, content, username, createdAt, likes, c
     await createPost({ title: title, content:content, username: username, uid: user.uid, tags: tags, activeCategory: "general", communityName: "anxiety" })
   }
 
-
-  
   return (
     <Card className="w-full max-w-xl">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-lg font-semibold leading-tight text-card-foreground">{title}</h3>
+          <h3 className="text-lg font-semibold text-card-foreground">{title}</h3>
           <span className="shrink-0 text-xs text-muted-foreground">{getRelativeTime(createdAt)}</span>
         </div>
 
@@ -197,7 +221,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
       <CardContent className="space-y-3 w-full">
         {
           status !== "deleted" ? (
-            <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+            <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
               {displayContent}
               {needsTruncation && (
                 <button
@@ -209,47 +233,34 @@ export default function Post({ id, title, content, username, createdAt, likes, c
               )}
             </p>
           ) : (
-            <p className=" italic mt-1 text-sm text-card-foreground leading-relaxed break-words">
-              [Post has been removed by the user or a moderator]
+            <p className=" italic mt-1 text-sm text-card-foreground break-words">
+              [ Content has been removed by the user or a moderator ]
             </p>
           )
         }
-        
-        {/* // <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-        //   {displayContent}
-        //   {needsTruncation && (
-        //     <button
-        //       onClick={() => setExpanded((prev) => !prev)}
-        //       className="ml-1 text-sm font-medium text-primary hover:underline"
-        //     >
-        //       {expanded ? "Show less" : "Read more"}
-        //     </button>
-        //   )}
-        // </p> */}
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handleLike}>
+          <Button variant="ghost" size="sm" className="gap-1.5 px-2 cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleLike}>
             <Heart
               className={`h-4 w-4 ${liked ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
             />
             <span className="text-xs text-muted-foreground">{likeCount}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handleCommentsToggle}>
-            {/* <MessageCircle className={`h-4 w-4 ${commentsOpen ? "fill-primary text-primary" : "text-muted-foreground"}`} /> */}
+          <Button variant="ghost" size="sm" className="gap-1.5 px-2  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleCommentsToggle}>
             <MessageCircle className= "h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{commentsCount}</span>
             {commentsOpen && <ChevronUp className="h-3 w-3 text-muted-foreground"/>}
             {!commentsOpen && <ChevronDown className="h-3 w-3 text-muted-foreground"/>}
           </Button>
 
-         <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handleReplyToPost}>
+         <Button variant="ghost" size="sm" className="gap-1.5 px-2 cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleReplyToPost}>
             <Plus className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Comment</span>
           </Button>
 
           { category.toLowerCase() === "reflections" && (
-            <Button variant="ghost" size="sm" className="gap-1.5 px-2" onClick={handlePostfromReflection}>
+            <Button variant="ghost" size="sm" className="gap-1.5 px-2  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handlePostfromReflection}>
               <Plus className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Post</span>
             </Button>
@@ -259,7 +270,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l"
               onClick={toggleBookmark}
             >
               <Bookmark
@@ -269,15 +280,16 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l">
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleReport}>
+                <DropdownMenuItem className=" cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleReport}>
                   <Flag className="mr-2 h-4 w-4" /> Report Post
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  className="cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     toast.success("Post URL copied to clipboard!");
@@ -341,5 +353,6 @@ export default function Post({ id, title, content, username, createdAt, likes, c
         />
       )}
     </Card>
+    
   );
 }

@@ -41,7 +41,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions, a
     }
   };
 
-  console.log(activeCategory)
+  // console.log(activeCategory)
 
 
   return(

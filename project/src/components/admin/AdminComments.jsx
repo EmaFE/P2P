@@ -1,20 +1,8 @@
-// import React from "react";
-
-// export default function AdminComments(){
-//   return (
-//     <div>
-//       <h1>Admin Comments</h1>
-//     </div>
-//   )
-// } 
-
-
 import React from "react";
 import { RotateCcw, Search, Trash2} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import Post from "../Post";
 import { getRelativeTime } from "@/lib/relative-time";
 import ReasonDeleteDialog from "./ReasonDeleteDialog";
 import { deleteContent, fetchAllComments, dismiss } from "@/config/firebase";
@@ -62,7 +50,6 @@ export default function AdminComments(){
   const handleRestore = async (id) => {
     await dismiss(id, "comments", user.uid);
     setComments((prev) => prev.filter((comment) => comment.id !== id))
-    // console.log("Restore comment with id: ", id)
     setRefresh((prev) => prev + 1)
     if (refresh === 10){
       setRefresh(0)

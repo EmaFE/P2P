@@ -21,6 +21,7 @@ import { Toaster } from 'sonner'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Account from './components/Account'
 import Admin from './pages/Admin'
+import ScrollTop from './components/ScrollTop'
 
 export default function App(){
   return(
@@ -28,16 +29,17 @@ export default function App(){
       <Toaster richColors position="top-center" />
       <AuthProvider>
         <Router>
-          <Routes>
-            <Route path="/" exact element={<Home />}/>
-            <Route path="/login" exact element={<LogIn />}/>
-            <Route path="/signup" exact element={<SignUp />}/>
-            <Route path="/community/anxiety" exact element={<ProtectedRoute><Anxiety /></ProtectedRoute>}/>
-            <Route path="/community/grief" exact element={<ProtectedRoute><Grief /></ProtectedRoute>}/>
-            <Route path="/community/universityStudents" exact element={<ProtectedRoute><Uni /></ProtectedRoute>}/>
-            <Route path="/account" exact element={<ProtectedRoute><Account /></ProtectedRoute>}/>
-            <Route path="/admin" exact element={<ProtectedRoute><Admin /></ProtectedRoute>}/>
-          </Routes>
+          <ScrollTop/>
+            <Routes>
+              <Route path="/" exact element={<Home />}/>
+              <Route path="/login" exact element={<LogIn />}/>
+              <Route path="/signup" exact element={<SignUp />}/>
+              <Route path="/community/anxiety" exact element={<ProtectedRoute><Anxiety /></ProtectedRoute>}/>
+              <Route path="/community/grief" exact element={<ProtectedRoute><Grief /></ProtectedRoute>}/>
+              <Route path="/community/universityStudents" exact element={<ProtectedRoute><Uni /></ProtectedRoute>}/>
+              <Route path="/account" exact element={<ProtectedRoute><Account /></ProtectedRoute>}/>
+              <Route path="/admin" exact element={<ProtectedRoute><Admin /></ProtectedRoute>}/>
+            </Routes>
         </Router>
       </AuthProvider>
       

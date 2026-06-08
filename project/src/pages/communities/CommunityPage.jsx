@@ -1,5 +1,5 @@
 import { Filter, Plus} from "lucide-react";
-import React, { act, useState } from "react";
+import React, { useState } from "react";
 import { SheetContent, SheetTrigger, Sheet } from "../../components/ui/sheet";
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { Button } from "../../components/ui/button";
@@ -11,11 +11,13 @@ import FilterSortSideBar from "../../components/FilterSortSideBar";
 import { useAuth } from "@/util/authContext";
 import { onAuthStateChanged } from "firebase/auth"
 import { collection, getDocs, onSnapshot, query, addDoc, where, serverTimestamp} from "firebase/firestore";
-import { db, fetchPosts, createPost, auth} from "../../config/firebase";
+import { db, fetchPosts, createPost, auth, getUserById} from "../../config/firebase";
+import PopUp from "@/components/PopUp";
 
 const CommunityPage = ({communityName, description, categories, filterOptions, sortOptions}) =>{
 
   const { user } = useAuth();
+  const [userDB, setUserDB] = useState(null);
   const isMobile  = useIsMobile();
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [selectedFilters, setSelectedFilters] = useState([]);
@@ -23,6 +25,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   const [posts, setPosts] = useState([]);
   const [isNewPost, setIsNewPost] = useState(false);
   const [isUserPressed, setUserPressed] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   
   async function handleCreatePost(post) {
@@ -33,43 +36,26 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
       await createPost({ title: post.title, content: post.content, username: username, uid: uid, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
       const newPosts = await fetchPosts();
       setPosts(newPosts);
-     // console.log("new posts: ", newPosts)
     } catch (error) {
-     // console.error("Error creating post:", error);
+      console.error("Error creating post:", error);
     }
     
   }
 
-
-  // React.useEffect(() => {
-  //   async function loadPosts() {
-  //     const newPosts = await fetchPosts();
-  //     setPosts(newPosts);
-  //   //console.log("Fetched posts: ", newPosts)
-  //   }
-  //   loadPosts();
-  // }, []);
-
-//   React.useEffect(() => {
-//   const unsubscribe = onAuthStateChanged(auth, (user) => {
-//     if (user) {
-//       fetchPosts(activeCategory, user).then(setPosts);
-//     }
-//   });
-
-//   return () => unsubscribe(); //cleanup on unmount
-// }, []);
-
 React.useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
     if (!user) return;
-
+    setLoading(true);
     const posts = await fetchPosts(activeCategory, user);
+    const userdb = await getUserById(user.uid);
+    setUserDB(userdb)
     setPosts(posts);
+    setLoading(false);
   });
 
   return () => unsubscribe();
-}, [activeCategory]);
+}, [activeCategory, user.uid]);
+
 
   const filteredPosts = () =>{  
     return posts.filter((post) => {
@@ -89,11 +75,6 @@ React.useEffect(() => {
         selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
       
       const filterMatchUser = !isUserPressed || post.username.trim().toLowerCase() === isUserPressed.trim().toLowerCase()
-      
-      // console.log("post username", post.username)
-      // console.log("state username: ", isUserPressed)
-      // console.log(filterMatchUser)
-      // console.log("isUserPressed:", isUserPressed, typeof isUserPressed);
 
       return categoryMatch && filterMatchPosts && communityMatch && filterMatchUser;
     })
@@ -102,14 +83,12 @@ React.useEffect(() => {
 
   //sort by newest as default, so if no sort is selected, sort by newest
     const sortedPosts = () =>{
-      //console.log(filteredPosts())
     return filteredPosts().sort((a, b) =>{
       if(selectedSort === "Most Liked"){
         return b.likes - a.likes;
       } else if (selectedSort === "Most Commented"){
         return b.commentsCount - a.commentsCount;
       } else if (selectedSort === "Newest"){
-        //console.log("sorting by newest: ", a.createdAt, b.createdAt)
         return b.createdAt - a.createdAt;
       } else if (selectedSort === "Oldest"){
         return a.createdAt - b.createdAt;
@@ -119,10 +98,6 @@ React.useEffect(() => {
   }
 
   const visiblePosts = sortedPosts();
-
-  // visiblePosts.map((post) =>{
-  //   console.log("commentsCount: ", post.commentsCount)
-  // })
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
@@ -146,13 +121,13 @@ React.useEffect(() => {
   return(
     <div className="flex flex-1 top-0">
       <main className="flex flex-col flex-1">
-        <header className="sticky top-0 z-5 bg-slate-300 border-b px-7 md:px-6 py-5 pt-7 rounded-lg">
+        <header className="sticky top-0 z-1 bg-pink-800 border-b px-7 md:px-6 py-5 pt-7 bg-[var(--color-six)] '">
 
           <div className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h1 className="text-2xl md:text-2xl text-white font-bold text-foreground mb-3">
               {communityName}
             </h1>
-            <p className="mt-1">{description}</p>
+            <p className="text-white mt-1">{description}</p>
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -163,7 +138,7 @@ React.useEffect(() => {
                     key={category}
                     onClick={() => setActiveCategory(category)}
                     className={cn("pb-2 text-lg transition-all border-b-2",
-                    activeCategory === category ? "border-primary text-pink-800" : "border-transparent text-slate-400 hover: text-slate-100"
+                    activeCategory === category ? "border-primary border-white text-white " : "text-slate-200 border-transparent hover:text-white  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l"
                     )}
                   >
                     {category}
@@ -229,13 +204,16 @@ React.useEffect(() => {
                   )
                 }
 
+               <div className="group">
+
                 <Button
                   onClick={() => setIsNewPost(true)}
-                  className="gap-2 font-semibold lg:mr-113"
+                  className="gap-2 font-semibold lg:mr-113 bg-[var(--color-seven)] text-black group-hover:text-[var(--color-six) cursor-pointer shadow-sm transition duration-300  hover:scale-105 hover:bg-white/70 hover:shadow-l"
                 >
                   <Plus className="h-4 w-4"/>
-                  <span className="hidden sm:inline">Create Post</span>
+                  <span className="hidden sm:inline ">Create Post</span>
                 </Button>
+                </div> 
               </div>
             </div>
         </header>
@@ -268,12 +246,16 @@ React.useEffect(() => {
                       status={post.status}
                     />
                   
-                  )})) : (
-                  <div className="text-center py-12 text-pink-800">
-                    <p>No posts in this category yet.</p>
-                    <p>Be the first to create one!</p>
-                  </div>
-                )
+                  )})) : loading ? (
+                    <div className="text-center py-12 text-pink-800">
+                      <p>Loading...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-pink-800">
+                      <p>No posts in this category yet.</p>
+                      <p>Be the first to create one!</p>
+                    </div>
+                  )
               }
             </div>
           </ScrollArea>
@@ -291,15 +273,19 @@ React.useEffect(() => {
         </div>
       </main>
 
-            
-      <NewPostWindow
-        open={isNewPost}
-        onOpenChange={setIsNewPost}
-        onSubmit={handleCreatePost}
-        categories={categories}
-        tagOptions={filterOptions}
-        activeCategory={activeCategory}
-      />
+
+      
+      {isNewPost && userDB?.status !== "active" && <PopUp onClose={() => setIsNewPost(false)} title="Account Suspended" text="Your account is currently suspended. You cannot create posts at this time." />}   
+
+      {userDB?.status === "active" && 
+        (<NewPostWindow
+          open={isNewPost}
+          onOpenChange={setIsNewPost}
+          onSubmit={handleCreatePost}
+          categories={categories}
+          tagOptions={filterOptions}
+          activeCategory={activeCategory}
+        />)}
     </div>
   )
 

@@ -29,7 +29,6 @@ export default function AdminReports(){
       const reportedPosts2 = fetchedPosts2.filter(post => post.status === "reported");
       const reportedComments = fetchedComments.filter(comment => comment.status === "reported");
       setReports([...reportedPosts, ...reportedPosts2, ...reportedComments])
-      // console.log("Fetched reports: ", reports)
     }
     fetchReports();
   }, [refresh]); //fetch all posts and filter for reported ones since theres no separate collection for reports, can be optimsied later if needed
@@ -42,7 +41,6 @@ export default function AdminReports(){
     if (refresh === 10){
       setRefresh(0)
     }
-    // console.log("Dimissing report with id: ", reportId)
   }
 
   const handleDeleteReport = async (reason) => {
@@ -53,7 +51,6 @@ export default function AdminReports(){
     if (refresh === 10){
       setRefresh(0)
     }
-    // console.log("Deleting content for report with id: ", deleteDialogOpen.id, " with reason: ", reason)
   }
 
 

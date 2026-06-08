@@ -20,7 +20,7 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm" >
+     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm" >
       <div className="w-full max-w-lg mx-4 flex flex-col rounded-xl border border-border bg-card shadow-lg max-h-[80vh]" onClick={(e) => e.preventDefault()}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
@@ -35,7 +35,7 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
               <span className="text-muted-foreground">·</span>
               <span className="text-muted-foreground">{getRelativeTime(comment.createdAt)}</span>
             </div>
-            <p className="mt-[3px] text-sm pl-4 leading-relaxed text-card-foreground">{comment.content}</p>
+            <p className="mt-[3px] text-sm pl-4 text-card-foreground">{comment.status !== "active" ? "[ Content has been removed by the user or a moderator ] " : comment.content}</p>
             <p className="mt-2 text-xs text-muted-foreground">
               Replying to <span className="text-primary">@{comment.username}</span>
             </p>

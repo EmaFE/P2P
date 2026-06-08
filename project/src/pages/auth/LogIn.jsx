@@ -14,7 +14,8 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { getUserByEmail } from '../../config/firebase'
 import PopUp from '@/components/PopUp'
-
+import CommunityRules from '@/components/CommunityRules'
+import TermsAndConditions from '../../components/Terms'
 import { toast } from "sonner";
 
 const LogIn = () =>{
@@ -29,6 +30,8 @@ const LogIn = () =>{
   const [susOpen, setSusOpen] = React.useState(false)
   const [banOpen, setBanOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(true)
+  const [communityRulesOpen, setCommunityRulesOpen] = React.useState(false)
+  const [communityRulesAccepted, setCommunityRulesAccepted] = React.useState(false)
 
   let navigate = useNavigate()
 
@@ -80,44 +83,50 @@ const LogIn = () =>{
   const signInWithGoogle = async (event) =>{
     event.preventDefault()
     if (!termsAccepted){
-      setError("Please accept the terms and conditions to sign up.")
-    } else{
-        try{
-          const provider = new GoogleAuthProvider();
-          const result = await signInWithPopup(auth, provider);
-          const user = result.user;
+      setError("Please accept the terms and conditions when logging in with Google. ")
+      return
+    }
+    if (!communityRulesAccepted){
+      setError("Please accept the community rules when logging in with Google.")
+      return
+    }
+    try{
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-          
-          //check if user already exists in firestore
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+      
+      //check if user already exists in firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
 
-          if(userDoc?.status === "suspended"){
-            setSusOpen(true)
-          }
-          if(userDoc?.status === "banned"){
-            setBanOpen(true)
-          }
-
-          if (!userDoc.exists()) {
-            //first time => generate username and create document
-            const randomUsername = generateRandomUsername();
-            await setDoc(doc(db, "users", user.uid), {
-              uid: user.uid,
-              email: user.email,
-              username: randomUsername,
-              createdAt: serverTimestamp(),
-              status: "active",
-              role: "user",
-              reportCount: 0,
-              suspendCount: 0,
-            });
-          }
-        } catch(error){
-            console.log("Error signing in with Google:",error);
-        } finally{
-            navigate("/")
-        }
+      if(userDoc?.status === "suspended"){
+        setSusOpen(true)
       }
+      if(userDoc?.status === "banned"){
+        setBanOpen(true)
+      }
+
+      if (!userDoc.exists()) {
+        //first time => generate username and create document
+        const randomUsername = generateRandomUsername();
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          username: randomUsername,
+          createdAt: serverTimestamp(),
+          status: "active",
+          role: "user",
+          reportCount: 0,
+          suspendCount: 0,
+        });
+      }
+    } catch(error){
+        console.log("Error signing in with Google:",error);
+        toast.error("Signing in with Google did not work. Try again later.");
+    } finally{
+        navigate("/")
+    }
+  
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -130,6 +139,12 @@ const LogIn = () =>{
   const openTerms = (e) =>{
     e.preventDefault()
     setTermsOpen(true)
+  }
+
+
+  const openCommunityRules = (e) =>{
+    e.preventDefault()
+    setCommunityRulesOpen(true)
   }
 
 
@@ -165,7 +180,7 @@ const LogIn = () =>{
 
           {error && <p className='text-red-400 text-s'>{error}</p>}
 
-          <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+          {/* <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Are you absolutely sure?</DialogTitle>
@@ -174,8 +189,9 @@ const LogIn = () =>{
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
 
+          { termsOpen && <TermsAndConditions open={termsOpen} onOpenChange={setTermsOpen} /> }
           <FieldGroup className="mb-2 mt-2">
               <Field orientation="horizontal">
                 <Checkbox id="terms-checkbox-basic" name="terms-checkbox-basic" checked={termsAccepted} onCheckedChange={setTermsAccepted} />
@@ -192,9 +208,25 @@ const LogIn = () =>{
               </Field>
           </FieldGroup>
 
-          {susOpen && <PopUp title="Suspended User" text="Your account has been suspended. You cannot create, and delete posts or comments until the suspension is lifted. You can only read posts and comments. Log in again to access the platform." onClose={() => setSusOpen(false)} />}
+          { communityRulesOpen && <CommunityRules open={communityRulesOpen} onOpenChange={setCommunityRulesOpen} /> }
+          <FieldGroup className="mb-4 mt-2">
+            <Field orientation="horizontal">
+              <Checkbox id="community-rules-checkbox" name="community-rules-checkbox" checked={communityRulesAccepted} onCheckedChange={setCommunityRulesAccepted} />
+              <FieldLabel htmlFor="community-rules-checkbox">
+                <button
+                  className='hover:cursor-pointer hover:underline'        
+                  onClick={openCommunityRules}                  
+                >
+                  Accept our community rules
+                </button>
+                
+              </FieldLabel>
+            </Field>
+          </FieldGroup>
+
+          {susOpen && <PopUp title="Account Suspended" text="Your account has been suspended. You cannot create, and delete posts or comments until the suspension is lifted. You can only read posts and comments. Log in again to access the platform." onClose={() => setSusOpen(false)} />}
             
-          {banOpen && <PopUp title="Banned User" text="Your account has been banned. You cannot access the platform anymore." onClose={() => setBanOpen(false)} />}
+          {banOpen && <PopUp title="Account Banned" text="Your account has been banned. You cannot access the platform anymore." onClose={() => setBanOpen(false)} />}
 
           <button
             type='submit'

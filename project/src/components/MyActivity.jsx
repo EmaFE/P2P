@@ -13,7 +13,7 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { Button } from "./ui/button";
 import { Heart, FileText, MessageCircle, Bookmark, ChevronDown, ChevronUp, Loader, X, Trash2 } from "lucide-react"
-import { fetchPostsByUser, fetchCommentsByUser, fetchBookmarksByUser, fetchLikesByUser, fetchPostById, deleteComment, deletePost, deleteLike, deleteBookmark } from "@/config/firebase"
+import { fetchPostsByUser, fetchCommentsByUser, fetchCommentById, fetchBookmarksByUser, fetchLikesByUser, fetchPostById, deleteComment, deletePost, deleteLike, deleteBookmark, deleteContent, getUserById } from "@/config/firebase"
 import { toast } from 'sonner'
 import { getRelativeTime } from "@/lib/relative-time";
 import Post from "../components/Post"
@@ -33,16 +33,16 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   
   return(
     <Collapsible open={open} onOpenChange={(newVal) => setOpen(newVal)}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-card-foreground hover:bg-accent/50 transition-colors">
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium hover:bg-[var(--color-six)] hover:text-white hover:font-normal transition-colors">
         <span className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-muted-foreground"/>
+          <Icon className="h-4 w-4 group-hover:text-white transition-colors"/>
             {label}
-            {data && <span className="ml-1 text-xs text-muted-foreground">({data.length})</span>}
+            {data && <span className="ml-1 text-xs text-muted-foregroud">({data.length})</span>}
         </span>
         {open ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground"/>
+          <ChevronUp className="h-4 w-4 hover:text-white"/>
         ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+          <ChevronDown className="h-4 w-4 hover:text-white"/>
         )}
       </CollapsibleTrigger>
 
@@ -52,7 +52,7 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
             <Loader className="h-5 w-5 animate-spin text-muted-foreground"/>
           </div>
         ) : data && data.length === 0 ? (
-          <p className="py-4 text-sm text-center text-muted-foreground">
+          <p className="py-4 text-sm text-center text-black">
             {defaultText}
           </p>
         ) : (
@@ -65,31 +65,34 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   )
 }
 
-function ActivityRow({id, postId, text1, text2, time, status, onClick, deleteText }) {
+function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, status, onClick, deleteText }) {
+
+  // console.log("user from activity row: ", user)
 
   //based on deleteText decide what to call from firebase (remove like, remove post, remove bm, remove comment) in span onClick
   const deleteFunction = () =>{
     switch (deleteText){
-      case "delete post": return deletePost(id);
-      case "delete comment": return deleteComment(id, postId);
+      case "delete post": return deleteContent(id, "user deletion", "posts", "deleted", user.uid);
+      case "delete comment": return deleteContent(id, "user deletion", "comments", "deleted", user.uid);
       case "remove like": return deleteLike(id, postId);
-      case "remove bookmark": return deleteBookmark(id);
+      case "remove bookmark": return deleteBookmark(bookmark, "user deletion", "bookmarks", "deleted", user.uid);
       default: return () => {};
     }
   }
+  // id, reason, collection, status, admin_id
 
-  console.log("status: ", status)
+  // console.log("status: ", status)
 
   return (
-    <div onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:bg-slate-100 rounded-xl">
+    <div onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:scale-101 hover:bg-white/80 hover:shadow-l rounded-xl">
       <div className="flex-1 py-[0.5px]">
         {status === "deleted" && (
           <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">[Deleted]</p>
         )}
         {status === "active" && (
-        <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1}</p>
+        <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1.slice(0,15)}</p>
         )}
-          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2}</p>}
+          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2.slice(0,15)}</p>}
       </div>
       <div className="relative group flex flex-col items-end gap-1 py-[1px] px-1">
         {time && <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{time}</span>}
@@ -111,8 +114,10 @@ function ActivityRow({id, postId, text1, text2, time, status, onClick, deleteTex
 
 
 export default function MyActivity ({ user }) {
+  // console.log("user from my activity: ", user)
 
   //{} map => no need to manually call fetchPostById for liked / bookmarked posts
+  const [userDB, setUserDB] = useState(null);
   const [posts, setPosts] = useState([]);
   const [likes, setLikes] = useState(null);
   const [comments, setComments] = useState(null);
@@ -129,6 +134,10 @@ export default function MyActivity ({ user }) {
 
   React.useEffect(() => {
     if(user.uid === null) return;
+    async function fetchUser() {
+      const userdb = await getUserById(user.uid);
+      setUserDB(userdb);
+    }
     async function fetchP(){
       setLoadingPosts(true);
       try{
@@ -159,12 +168,14 @@ export default function MyActivity ({ user }) {
         const fetchedBookmarks = await fetchBookmarksByUser(user);
         setBookmarks(fetchedBookmarks);
         //set the actual bookmarked posts
-        console.log("fet bm: ", await fetchBookmarksByUser(user))
         for (const bookmark of fetchedBookmarks) {
-          console.log("bm: ", bookmark)
-          console.log(bookmark.commentId ? bookmark.commentId : bookmark.postId)
-          const post = await fetchPostById(bookmark.commentId ? bookmark.commentId : bookmark.postId);
-          if (post) setBookmarkedPosts((prev) => ({...prev, [bookmark.commentId ? bookmark.commentId : bookmark.postId]: post}));
+          if (bookmark.type === "comment"){
+            const com = await fetchCommentById(bookmark.commentId)
+            if (com) setBookmarkedPosts((prev) => ({...prev, [bookmark.commentId]: com}));
+          } else if (bookmark.type === "post"){
+            const post = await fetchPostById(bookmark.postId)
+             if (post) setBookmarkedPosts((prev) => ({...prev, [bookmark.postId]: post}));
+          }
         }
       } catch(error) {
         console.log(error);
@@ -190,25 +201,19 @@ export default function MyActivity ({ user }) {
         setLoadingLikes(false);
       }
     }
+    fetchUser();
     fetchP();
     fetchC();
     fetchB();
     fetchL();
+    
   }, [user?.uid])
 
-//   React.useEffect(() => {
-//   console.log("UPDATED BOOKMARKED:", bookmarkedPosts);
-// }, [bookmarkedPosts]);
-//   React.useEffect(() => {
-//   console.log("UPDATED BOOKMARKS:", bookmarks);
-// }, [bookmarks]);
-
-
   const renderPost = (post) => {
-    console.log("rendering post with status: ", post.status)
     return (
       <ActivityRow
         key={post.id}
+        user={user}
         id={post.id}
         text1={post.title}
         text2={post.content}
@@ -225,6 +230,7 @@ export default function MyActivity ({ user }) {
       return(
         <ActivityRow
           key={comment.id}
+          user={user}
           id={comment.id}
           postId={comment.postId}
           text1={comment.content}
@@ -239,30 +245,38 @@ export default function MyActivity ({ user }) {
   }
 
   const renderBookmark = (bookmark) => {
-  //  const post = bookmarkedPosts[bookmark.commentId ? bookmark.commentId : bookmark.postId]
-   const post = bookmarkedPosts[bookmark.postId]
-    const com = bookmarkedPosts[bookmark.commentId]
-    if (com){
-      console.log("com",com)
-      const post = getDoc(doc(db, "posts", com?.postId))
+  let com = null
+  let post = null
+  if (bookmark.type === "comment"){
+    com = bookmarkedPosts[bookmark.commentId]
+    // console.log("com in render bm: ", com)
+  } else if (bookmark.type === "post"){
+    post = bookmarkedPosts[bookmark.postId]
+    // console.log("post in render bm: ", post)
+  }
+    if (com !== null){
       return (
         <ActivityRow
           key={com.id}
+          user={user}
           id={com.id}
-          text1={com.title}
-          text2={com.content}
+          bookmark={bookmark.id}
+          postId={com.postId}
+          text1={com.content}
+          text2={com.repliedTo ? `replied to @${com.repliedTo}` : null}
           time={getRelativeTime(com.createdAt)}
           status={com.status}
           onClick={() => openPost(bookmark.postId, com)}
           deleteText="remove bookmark"
         />
       )
-    } else {
-      const post = bookmarkedPosts[bookmark.postId]
+    } else if (post !== null){
       return (
         <ActivityRow
           key={post.id}
+          user={user}
           id={post.id}
+          bookmark={bookmark.id}
           text1={ post ? post.title : ""}
           text2={post ? post.content : ""}
           time={getRelativeTime(post.createdAt)}
@@ -281,6 +295,7 @@ export default function MyActivity ({ user }) {
       return (
         <ActivityRow
           key={post.id}
+          user={user}
           id={like.id}
           postId={post.id}
           text1={post ? post.title : ""}
@@ -296,22 +311,17 @@ export default function MyActivity ({ user }) {
 
   const openPost = async (postId, comment = null, bookmark = null) => {
     const post = likedPosts[postId] || bookmarkedPosts[postId] || posts?.find((p) => p.id === postId);
-     if (!comment && post?.status === "deleted") {
-      toast.error("This content has been deleted and cannot be viewed.");  
-    } else {
-        setExpandedPost(post || null);
-        setExpandedComment(comment || null);
-        setExpandedComBookmark(bookmark || null);
-        console.log("commmm", expandedComment)
-        if(post){
-          const p = await fetchPostById(postId)
-          setExpandedPost(p);
-        }
+      setExpandedPost(post || null);
+      setExpandedComment(comment || null);
+      setExpandedComBookmark(bookmark || null);
+      // console.log("commmm", expandedComment)
+      if(post){
+        const p = await fetchPostById(postId)
+        setExpandedPost(p);
       }
   };
 
   if (expandedPost) {
-    console.log(expandedPost)
     return (
       <div className="space-y-3">
         <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setExpandedPost(null); setExpandedComment(null); setExpandedComBookmark(null) }}>
@@ -331,7 +341,7 @@ export default function MyActivity ({ user }) {
               <span>·</span>
               <span>{getRelativeTime(expandedComment.createdAt)}</span>
             </div>
-            <p className="mt-1 text-sm text-card-foreground">{expandedComment.content}</p>
+            <p className="mt-1 text-sm text-card-foreground">{expandedComment?.status === "active" ? expandedComment.content : "[ Deleted ]"}</p>
           </div>
         )}
         {expandedComBookmark && (
@@ -348,7 +358,7 @@ export default function MyActivity ({ user }) {
               <span>·</span>
               <span>{getRelativeTime(expandedComBookmark.createdAt)}</span>
             </div>
-            <p className="mt-1 text-sm text-card-foreground">{expandedComBookmark.content}</p>
+            <p className="mt-1 text-sm text-card-foreground">{ expandedComBookmark?.status === "active" ? expandedComBookmark.content : "[ Deleted ]"}</p>
           </div>
         )}
         <Post {...expandedPost}/>

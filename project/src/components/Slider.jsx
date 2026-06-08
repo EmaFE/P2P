@@ -1,6 +1,7 @@
 import React from "react";
 
-const Slider = ({ pic, name, description, pos, bgColor, isVisible, duration}) =>{
+
+const Slider = ({ pic: Icon, name, description, pos, bgColor, isVisible, duration}) =>{
 
   return(
     <>
@@ -12,11 +13,7 @@ const Slider = ({ pic, name, description, pos, bgColor, isVisible, duration}) =>
         duration-${duration}
         ${ (isVisible) ? "opacity-100 translate-x-0" : `opacity-0 -translate-x-32`}
       `}>
-        <img 
-          src={pic} 
-          alt={name} 
-          className="w-15 mr-5"
-        />
+        <Icon className="w-15 h-15 mr-5" />
         <div className="flex flex-col">
           <h2 className="text-md md:font-semibold mt-2">{name}</h2>
           <p className="text-sm hidden md:block">{description}</p>

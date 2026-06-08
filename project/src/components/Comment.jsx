@@ -1,6 +1,6 @@
 import React from "react";
 import { collection, getDocs, query, where, onSnapshot } from "firebase/firestore";
-import { db, toggleLikeComment, handleBookmarkComment, isLikedByUser, createComment, isBookmarkedByUser, reportComment } from "@/config/firebase";
+import { db, toggleLikeComment, handleBookmarkComment, isLikedByUser, createComment, isBookmarkedByUser, reportComment, getUserById } from "@/config/firebase";
 import { useAuth } from "@/util/authContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,27 +8,50 @@ import { Heart, MessageCircle, ChevronDown, ChevronUp, Bookmark, MoreHorizontal,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { getRelativeTime } from "@/lib/relative-time";
 import ReplyWindow from "./ReplyWindow";
+import { toast } from "sonner";
+import PopUp from "./PopUp";
 
 const COLLAPSED_REPLY_LIMIT = 4;
 const MAX_CONTENT_LENGTH = 50;
 
 
 function CommentItem({ comment, onReplyClick, postId }) {
+
+  const { user } = useAuth();
+  const [userDB, setUserDB] = useState(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(comment.likes ?? 0);
   const [expanded, setExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [suspended, setSuspended] = useState(false)
+  const [open, setOpen] = useState(false)
+  const isSuspended = userDB?.status !== "active";
+    
+  // React.useEffect(() => {
+  //     if (user.status !== "active") {
+  //       setSuspended(true);
+  //       setOpen(true);
+  //     }
+  // }, [user.status]);
 
   const handleReport = () => {
     // Implement report functionality here
+    if (userDB?.status !== "active") {
+      toast.error("Your account is currently suspended. You cannot make reports at this time.")
+      return;
+    }
     reportComment(comment.id)
-    console.log("Reported comment ID:", comment.id);
+    // console.log("Reported comment ID:", comment.id);
   };
 
   const needsTruncation = comment.content.length > MAX_CONTENT_LENGTH;
   const displayContent = !expanded && needsTruncation ? comment.content.slice(0, MAX_CONTENT_LENGTH) + "…" : comment.content;
 
   const handleLike = async () => {
+    if (userDB?.status !== "active") {
+      toast.error("Your account is currently suspended. You cannot like posts/comments at this time.")
+      return;
+    }
     const prevLiked = liked;
     const newLiked = !liked;
     setLiked(newLiked);
@@ -44,14 +67,13 @@ function CommentItem({ comment, onReplyClick, postId }) {
     }
   };
 
-  const { user } = useAuth();
   React.useEffect( () =>{
     if (!comment.id || !user?.uid) return;
-    console.log("COMM bookmark postId: ", comment.id)
-    console.log("COMM bookmark userId: ", user.uid)
+    // console.log("COMM bookmark postId: ", comment.id)
+    // console.log("COMM bookmark userId: ", user.uid)
     const check = async () =>{
       const resultB = await isBookmarkedByUser(comment.id, user.uid, "comment");
-      console.log("await isBookmarkedByUser(comment.id, user.uid, comment : ", await isBookmarkedByUser(comment.id, user.uid, "comment"))
+      // console.log("await isBookmarkedByUser(comment.id, user.uid, comment : ", await isBookmarkedByUser(comment.id, user.uid, "comment"))
       setBookmarked(resultB);
     }
     check();
@@ -81,31 +103,20 @@ function CommentItem({ comment, onReplyClick, postId }) {
   
     }, [comment.id, user?.uid]); //runs user.uid changes
 
-    
-  //   React.useEffect(() => {
-  //     if(!comment.id || !user?.uid) return
-  //     const handleBookmark = async () => {
-  //       // const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-  //       // const userId = userDoc.docs[0]?.data()?.uid;
-  //       // handleBookmarkComment(comment.id, bookmarked, userId);
-
-  //       const resultBookmark = await isBookmarkedByUser(comment.id, user.uid);
-  //       setBookmarked(resultBookmark)
-  //     };
-  //   handleBookmark();
-  //   const q = query(
-  //         collection(db, "likes"),
-  //         where("postId", "==", comment.id),
-  //         where("userId", "==", user.uid)
-  //       );
-    
-  //       const unsubscribe = onSnapshot(q, (snapshot) => {
-  //         setLiked(!snapshot.empty);
-  //       });
-  //       return () => unsubscribe();
-  // }, [comment.id, user?.uid]); //runs every time bookmarked changes
+     React.useEffect( () =>{
+      if (!user) return;
+      const fetchUser = async () =>{
+        const userdb = await getUserById(user.uid);
+      setUserDB(userdb);
+      }
+      fetchUser()
+    }, [user.uid]);
 
   const toggleBookmark = async () => {
+    if (userDB?.status !== "active") {
+      toast.error("Your account is currently suspended. You cannot bookmark posts/comments at this time.")
+      return;
+    }
     const prevB = bookmarked
     const newB = !bookmarked
     setBookmarked(newB);
@@ -135,7 +146,7 @@ function CommentItem({ comment, onReplyClick, postId }) {
           </div>
 
           {comment.status !== "deleted" ? (
-            <p className=" mt-1 text-sm text-card-foreground leading-relaxed break-words">
+            <p className=" mt-1 text-sm text-card-foreground break-words">
           {displayContent}
           {needsTruncation && (
             <button
@@ -147,22 +158,10 @@ function CommentItem({ comment, onReplyClick, postId }) {
           )}
         </p>
           ) : (
-            <p className=" italic mt-1 text-sm text-card-foreground leading-relaxed break-words">
-              [Comment has been removed by the user or a moderator]
+            <p className=" italic mt-1 text-sm text-card-foreground break-words">
+              [ Content has been removed by the user or a moderator ]
             </p>
           )}
-{/* 
-        //    <p className=" mt-1 text-sm text-card-foreground leading-relaxed break-words">
-        //   {displayContent}
-        //   {needsTruncation && (
-        //     <button
-        //       onClick={() => setExpanded((prev) => !prev)}
-        //       className="ml-1 text-sm font-medium text-primary hover:underline"
-        //     >
-        //       {expanded ? "Show less" : "Read more"}
-        //     </button>
-        //   )}
-        // </p> */}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5" onClick={handleLike}>
@@ -219,21 +218,33 @@ function CommentItem({ comment, onReplyClick, postId }) {
 
 export default function CommentThread({ comment, postId, replies, onCommentsRefresh }) {
   const { user } = useAuth();
+  const [userDB, setUserDB] = useState(null)
   const [expanded, setExpanded] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
   const hasReplies = replies.length > 0;
   const needsCollapse = replies.length > COLLAPSED_REPLY_LIMIT;
+  const [open, setOpen] = useState(false)
+
+    React.useEffect( () =>{
+      if (!user) return;
+      const fetchUser = async () =>{
+        const userdb = await getUserById(user.uid);
+      setUserDB(userdb);
+      }
+      fetchUser()
+    }, [user.uid]);
 
   //replies to comments, not posts
+  // console.log("styayv ", userDB?.status)
   const handleReplySubmit = async (text) => {
-
     if (!user) return;
-    const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-    const username = userDoc.docs[0]?.data()?.username;
-    const uid = userDoc.docs[0]?.data()?.uid;
-    console.log(uid)
 
-    await createComment({ parentId: comment.id, uid: uid, username: username, content: text, repliedTo: comment.username, postId: postId });
+    if (userDB?.status !== "active") {
+      toast.error("Your account is currently suspended. You cannot reply to comments at this time.")
+      return;
+    }
+
+    await createComment({ parentId: comment.id, uid: user.uid, username: userDB.username, content: text, repliedTo: comment.username, postId: postId });
 
     await onCommentsRefresh();
     setReplyTarget(null);
@@ -283,7 +294,7 @@ export default function CommentThread({ comment, postId, replies, onCommentsRefr
         </div>
       )}
 
-      {replyTarget && (
+      {replyTarget && !userDB?.status !== "active" && (
         <ReplyWindow
           comment={replyTarget}
           onClose={() => setReplyTarget(null)}

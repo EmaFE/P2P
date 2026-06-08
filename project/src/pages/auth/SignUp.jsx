@@ -13,6 +13,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
+import CommunityRules from '../../components/CommunityRules'
+import TermsAndConditions from '../../components/Terms'
+import { toast } from 'sonner'
+
 
 const SignUp = () =>{
   
@@ -28,6 +32,8 @@ const SignUp = () =>{
   const [username, setUsername] = React.useState('')
   const [termsAccepted, setTermsAccepted] = React.useState(false)
   const [termsOpen, setTermsOpen] = React.useState(false)
+  const [communityRulesOpen, setCommunityRulesOpen] = React.useState(false)
+  const [communityRulesAccepted, setCommunityRulesAccepted] = React.useState(false)
 
   let navigate = useNavigate()
 
@@ -37,93 +43,107 @@ const SignUp = () =>{
   
      if (!termsAccepted) {
       setError("Please accept the terms and conditions to sign up.")
-    } else{
-        
-        setError('')  
-
-        if(!validateEmail(email)){
-          setError("Please enter a valid email address.")
-          return;
-        }
-
-        if(!password){
-          setError("Please enter a password.")
-          return;
-        }
-
-        if(password.length < 6){
-          setError("Please enter a password of at least 6 characters")
-          return;
-        }
-
-        if(!passwordCheck){
-          setError("Please confirm your password.")
-          return;
-        }
-
-        if(!checkPassword(password, passwordCheck)){
-          setError("Confirmed password does not match.")
-          return;
-        }
-
-        if(username === ''){
-          setError("Please generate a username")
-          return;
-        }
-
-        try{
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-          await setDoc(doc(db, "users", userCredential.user.uid), {
-            uid: userCredential.user.uid,
-            username: username,
-            email: email,
-            createdAt: serverTimestamp(),
-            status: "active",
-            role: "user",
-            reportCount: 0,
-            suspendCount: 0,
-          });
-          navigate("/")
-        } catch(error){
-          console.error(error)
-        }
     }
+    if (!communityRulesAccepted){
+      setError("Please accept the community rules to sign up.")
+    } 
+        
+    if (error) {
+      setError('')
+    } 
+
+    if(!validateEmail(email)){
+      setError("Please enter a valid email address.")
+      return;
+    }
+
+    if(!password){
+      setError("Please enter a password.")
+      return;
+    }
+
+    if(password.length < 6){
+      setError("Please enter a password of at least 6 characters")
+      return;
+    }
+
+    if(!passwordCheck){
+      setError("Please confirm your password.")
+      return;
+    }
+
+    if(!checkPassword(password, passwordCheck)){
+      setError("Confirmed password does not match.")
+      return;
+    }
+
+    if(username === ''){
+      setError("Please generate a username")
+      return;
+    }
+
+    try{
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        username: username,
+        email: email,
+        createdAt: serverTimestamp(),
+        status: "active",
+        role: "user",
+        reportCount: 0,
+        suspendCount: 0,
+      });
+      navigate("/")
+    } catch(error){
+      console.error(error)
+    }
+    
     
   }
 
   const signInWithGoogle = async (event) =>{
     event.preventDefault()
     if (!termsAccepted){
-      setError("Please accept the terms and conditions to sign up.")
-    } else{
-        try{
-          const provider = new GoogleAuthProvider();
-          const result = await signInWithPopup(auth, provider);
-          const user = result.user;
-
-          //check if user already exists in firestore
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-
-          if (!userDoc.exists()) {
-            //first time => generate username and create document
-            const randomUsername = generateRandomUsername();
-            await setDoc(doc(db, "users", user.uid), {
-              uid: user.uid,
-              email: user.email,
-              username: randomUsername,
-              createdAt: serverTimestamp(),
-              status: "active",
-              role: "user",
-              reportCount: 0,
-              suspendCount: 0,
-            });
-          }
-        } catch(error){
-            console.log("Error signing in with Google:",error);
-        } finally{
-            navigate("/")
-        }
+      setError("Please accept the terms and conditions when logging in with Google..")
+      return;
+    } 
+    if (!communityRulesAccepted){
+      setError("Please accept the community rules when logging in with Google.")
+      return;
+    } 
+    try{
+      if (error) {
+        setError('')
       }
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      //check if user already exists in firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (!userDoc.exists()) {
+        //first time => generate username and create document
+        const randomUsername = generateRandomUsername();
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          username: randomUsername,
+          createdAt: serverTimestamp(),
+          status: "active",
+          role: "user",
+          reportCount: 0,
+          suspendCount: 0,
+        });
+      }
+    } catch(error){
+        console.log("Error signing in with Google:",error);
+        toast.error("Signing in with Google did not work. Try again later.");
+    } finally{
+        navigate("/")
+    }
+      
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -141,6 +161,11 @@ const SignUp = () =>{
   const openTerms = (e) =>{
     e.preventDefault()
     setTermsOpen(true)
+  }
+
+  const openCommunityRules = (e) =>{
+    e.preventDefault()
+    setCommunityRulesOpen(true)
   }
 
 
@@ -208,26 +233,32 @@ const SignUp = () =>{
 
             {error && <p className='text-s text-red-400'>{error}</p>}
 
-            <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Are you absolutely sure?</DialogTitle>
-                  <DialogDescription>
-                    This action cannot be undone...
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-
+            { termsOpen && <TermsAndConditions open={termsOpen} onOpenChange={setTermsOpen} /> }
             <FieldGroup className="mb-4 mt-2">
               <Field orientation="horizontal">
                 <Checkbox id="terms-checkbox-basic" name="terms-checkbox-basic" checked={termsAccepted} onCheckedChange={setTermsAccepted} />
                 <FieldLabel htmlFor="terms-checkbox-basic">
                   <button
                     className='hover:cursor-pointer hover:underline'        
-                    onClick={openTerms}                  
+                    onClick={openTerms}              
                   >
                     Accept terms and conditions
+                  </button>
+                  
+                </FieldLabel>
+              </Field>
+            </FieldGroup>
+
+           { communityRulesOpen && <CommunityRules open={communityRulesOpen} onOpenChange={setCommunityRulesOpen} /> }
+            <FieldGroup className="mb-4 mt-2">
+              <Field orientation="horizontal">
+                <Checkbox id="community-rules-checkbox" name="community-rules-checkbox" checked={communityRulesAccepted} onCheckedChange={setCommunityRulesAccepted} />
+                <FieldLabel htmlFor="community-rules-checkbox">
+                  <button
+                    className='hover:cursor-pointer hover:underline'        
+                    onClick={openCommunityRules}                  
+                  >
+                    Accept our community rules
                   </button>
                   
                 </FieldLabel>
@@ -257,7 +288,6 @@ const SignUp = () =>{
               > 
               Sign in with Google
             </button>
-
         </form>
       </div>
     </AuthLayout>

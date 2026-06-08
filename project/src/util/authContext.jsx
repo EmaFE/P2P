@@ -27,13 +27,13 @@ export function AuthProvider({ children }) {
     return () => unsub()
   }, [])
 
-  //effect for banned users, if user is banned while logged in, they will be signed out and not able to log in again unless unbanned
+  //effect for banned/suspended users, if user gets banned or suspended while logged in, they will be signed out and not able to log in again unless unbanned
   useEffect(() => {
     if (!user) return;
 
     const userRef = doc(db, "users", user.uid)
     const unsub = onSnapshot(userRef, async (snap) => {
-      if (snap.data()?.status === "banned") {
+      if (snap.data()?.status !== "active") {
         await signOut(auth)
         setUser(null)
       }
