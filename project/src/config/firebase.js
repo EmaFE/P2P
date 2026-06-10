@@ -404,9 +404,7 @@ export async function getUserName(){
 export async function fetchPostsByUser (user) {
   // console.log("auth user: ", auth.currentUser)
   const q = query(collection(db, "posts"), where("uid", "==", user.uid), orderBy("createdAt", "desc"));
-  console.log("---------------------")
   const snap = await getDocs(q);
-  console.log("555555555555555555555")
   return snap.docs.map((docSnap) => {
     const data = docSnap.data();
     return {

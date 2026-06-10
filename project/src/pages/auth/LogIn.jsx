@@ -96,12 +96,10 @@ const LogIn = () =>{
       }
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      // signInWithRedirect(auth, provider);
+      const email = result.user.email
+      //check if user already exists in users db
+      const userDoc = getUserByEmail(email);
       const user = result.user;
-
-      
-      //check if user already exists in firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
 
       if(userDoc?.status === "suspended"){
         setSusOpen(true)
@@ -110,7 +108,7 @@ const LogIn = () =>{
         setBanOpen(true)
       }
 
-      if (!userDoc.exists()) {
+      if (!userDoc) {
         //first time => generate username and create document
         const randomUsername = generateRandomUsername();
         await setDoc(doc(db, "users", user.uid), {

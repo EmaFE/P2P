@@ -12,7 +12,7 @@ import PopUp from "../components/PopUp";
 import { useAuth } from "@/util/authContext";
 
 
-function UpdateEmail({ user, userDB }) {
+function UpdateEmail({ user, userDB, isGoogleUser }) {
 
   // console.log("userdb: ", userDB)
 
@@ -97,7 +97,7 @@ function UpdateEmail({ user, userDB }) {
           </span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
-      {(userDB?.status === "active") &&<CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
+      {(userDB?.status === "active"  && !isGoogleUser) &&<CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Current Email</label>
           <div className="flex gap-2 mt-1">
@@ -154,7 +154,7 @@ function UpdateEmail({ user, userDB }) {
   )
 }
 
-function ChangePassword({ user, userDB }) {
+function ChangePassword({ user, userDB, isGoogleUser }) {
   const [open, setOpen] = useState(false)
   const [currentPassword, setCurrentPassword] = useState("")
   const [verifiedPassword, setVerifiedPassword] = useState(false)
@@ -223,7 +223,7 @@ function ChangePassword({ user, userDB }) {
         </span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
-      { (userDB?.status === "active") && <CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
+      { (userDB?.status === "active" && !isGoogleUser) && <CollapsibleContent className="mt-2 space-y-1 rounded-lg border border-border bg-card p-2">
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">Current Password</label>
           <div className="flex gap-2">
@@ -278,6 +278,8 @@ function ChangePassword({ user, userDB }) {
     const [userDB, setUserDB] = useState(null)
     const [open, setOpen] = useState(false)
 
+    const isGoogleUser = user?.providerData[0]?.providerId === "google.com"
+
     React.useEffect( () =>{
       // console.log("lakjblcabcj")
       if (!user) return;
@@ -287,16 +289,19 @@ function ChangePassword({ user, userDB }) {
         // console.log("userdb: from effect: ", userdb)
         setUserDB(userdb);
         if (userdb.status !== "active") setOpen(true)
+        if (isGoogleUser) setOpen(true)
       }
       fetchUser()
     }, [user.uid]);
 
+    console.log("status ", userDB?.status === "active",  "isGoogleUser ", isGoogleUser, "open ", open )
 
   return (
     <div className="space-y-3">
-      {userDB?.status != "active" && open && <PopUp onClose={() => setOpen(false)} title="Account Suspended" text="Your account is currently suspended. You cannot change your email or password at this time." /> }
-      {userDB && <UpdateEmail user={user} userDB={userDB}/> }
-      {userDB && <ChangePassword user={user} userDB={userDB}/> }
+      {userDB?.status !== "active" && open && <PopUp onClose={() => setOpen(false)} title="Account Suspended" text="Your account is currently suspended. You cannot change your email or password at this time." /> }
+      {userDB?.status === "active" && isGoogleUser && open && <PopUp onClose={() => setOpen(false)} title="Google User" text="You signed up with a Google account. If you wish to change your email address of password, you may do so from you Google account." /> }
+      {userDB && <UpdateEmail user={user} userDB={userDB} isGoogleUser={isGoogleUser}/> }
+      {userDB && <ChangePassword user={user} userDB={userDB} isGoogleUser={isGoogleUser}/> }
 
     </div>
   );
