@@ -7,7 +7,7 @@ import { validateEmail, checkPassword } from '../../util/helper'
 import logImage from '../../assets/images/logIn.jpg'
 
 import { auth, db } from "../../config/firebase"
-import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup, signOut } from 'firebase/auth'
+import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup, signOut, signInWithRedirect } from 'firebase/auth'
 import {doc, getDoc, setDoc, serverTimestamp} from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -35,9 +35,9 @@ const LogIn = () =>{
 
   let navigate = useNavigate()
 
-  const handleLogin = async (event) =>{
-    event.preventDefault()
-    setError('')
+  const handleLogin = async (e) =>{
+    e.preventDefault()
+    if (error) setError('')
 
     if(!validateEmail(email)){
       setError('Please enter a valid email address.')
@@ -91,8 +91,12 @@ const LogIn = () =>{
       return
     }
     try{
+      if (error) {
+        setError('')
+      }
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+      // signInWithRedirect(auth, provider);
       const user = result.user;
 
       
@@ -180,17 +184,6 @@ const LogIn = () =>{
 
           {error && <p className='text-red-400 text-s'>{error}</p>}
 
-          {/* <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Are you absolutely sure?</DialogTitle>
-                <DialogDescription>
-                  This action cannot be undone...
-                </DialogDescription>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog> */}
-
           { termsOpen && <TermsAndConditions open={termsOpen} onOpenChange={setTermsOpen} /> }
           <FieldGroup className="mb-2 mt-2">
               <Field orientation="horizontal">
@@ -231,13 +224,12 @@ const LogIn = () =>{
           <button
             type='submit'
             className='w-full text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-secondary)] rounded-lg px-6 py-3 mt-4 mb-6 shadow-lg shadow-grey-100 cursor-pointer'
-            onClick={handleLogin}
           >
             Log In
           </button>
           
           <p>Don't have an account?
-            <Link className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-primary)]'
+            <Link className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-secondary)]'
             to="/signup"
             >
               Sign Up
@@ -246,7 +238,7 @@ const LogIn = () =>{
 
           <span>or</span> <br />
 
-          <button className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-primary)] hover:cursor-pointer'
+          <button className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-secondary)] hover:cursor-pointer'
             onClick={signInWithGoogle}
             >
             Sign in with Google

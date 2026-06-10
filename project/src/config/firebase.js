@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc, snapshotEqual} from "firebase/firestore"
+import { doc, getFirestore, increment, query, updateDoc, collection, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp, getDoc, snapshotEqual, arrayUnion} from "firebase/firestore"
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
@@ -402,10 +402,11 @@ export async function getUserName(){
 }
 
 export async function fetchPostsByUser (user) {
-  // console.log("user: ", user)
   // console.log("auth user: ", auth.currentUser)
   const q = query(collection(db, "posts"), where("uid", "==", user.uid), orderBy("createdAt", "desc"));
+  console.log("---------------------")
   const snap = await getDocs(q);
+  console.log("555555555555555555555")
   return snap.docs.map((docSnap) => {
     const data = docSnap.data();
     return {
@@ -484,7 +485,6 @@ export async function fetchPostById (id) {
   const postDoc = await getDoc(doc(db, "posts", id)); 
   const data = postDoc.data();
   if(data){
-    // console.log("post doc data: ",data);
     return {
       id: postDoc.id,
       title: data.title ?? "",
@@ -634,7 +634,7 @@ export async function deleteContent (id, reason, collection, status, admin_id){
   try {
     const ref = doc(db, collection, id)
    // console.log("before update doc, ref: ", ref)
-    await updateDoc(ref, { status: status, deletionReason: reason })
+    await updateDoc(ref, { status: status, deletionReason: reason, tags:arrayUnion("Not Removed") })
     //console.log("after update")
     toast.success("Content successfully deleted!")
      //if a comment is deleted, decrement the comment count on the post
@@ -654,7 +654,7 @@ export async function deleteContent (id, reason, collection, status, admin_id){
     toast.error("Could not delete content. Please try again.")
     // console.log("error deleting content: ", error)
   } finally {
-    createLog(collection, admin_id, admin.username, id, data.uid, data.username, "delete", reason)
+    if (admin.role === "admin") createLog(collection, admin_id, admin.username, id, data.uid, data.username, "delete", reason)
   }
 }
 

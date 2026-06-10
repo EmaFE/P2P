@@ -25,7 +25,6 @@ function CommentItem({ comment, onReplyClick, postId }) {
   const [bookmarked, setBookmarked] = useState(false);
   const [suspended, setSuspended] = useState(false)
   const [open, setOpen] = useState(false)
-  const isSuspended = userDB?.status !== "active";
     
   // React.useEffect(() => {
   //     if (user.status !== "active") {

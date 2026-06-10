@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "../config/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { getUserByEmail } from "../config/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
 
@@ -14,15 +13,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let unsub = onAuthStateChanged(auth, (currentUser) => {
-      setLoading(false)
+      console.log("auth state changed:", currentUser)
       if (currentUser){
         setUser(currentUser)
-        setLoading(false)
       } else{
         setUser(null)
-        setLoading(false)
-        return;
       } 
+      setLoading(false)
     });
     return () => unsub()
   }, [])
@@ -33,7 +30,9 @@ export function AuthProvider({ children }) {
 
     const userRef = doc(db, "users", user.uid)
     const unsub = onSnapshot(userRef, async (snap) => {
-      if (snap.data()?.status !== "active") {
+      if (!snap.exists()) return
+      const status = snap.data()?.status
+      if ((status === "banned" || status === "suspended")) {
         await signOut(auth)
         setUser(null)
       }

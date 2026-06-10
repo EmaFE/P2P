@@ -90,9 +90,9 @@ function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, statu
           <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">[Deleted]</p>
         )}
         {status === "active" && (
-        <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1.slice(0,15)}</p>
+        <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1.slice(0,15)}...</p>
         )}
-          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2.slice(0,15)}</p>}
+          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2.slice(0,15)}...</p>}
       </div>
       <div className="relative group flex flex-col items-end gap-1 py-[1px] px-1">
         {time && <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{time}</span>}
@@ -133,7 +133,7 @@ export default function MyActivity ({ user }) {
   const [expandedComBookmark, setExpandedComBookmark] = useState(null);
 
   React.useEffect(() => {
-    if(user.uid === null) return;
+    if(!user) return;
     async function fetchUser() {
       const userdb = await getUserById(user.uid);
       setUserDB(userdb);

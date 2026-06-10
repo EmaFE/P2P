@@ -8,7 +8,7 @@ const rules = [
     icon: Heart,
     colors: "bg-teal-50 text-teal-700",
     title: "Treat everyone with respect",
-    desc: "Speak to others as you'd want to be spoken to on your hardest day. Disagreement is fine, cruelty is not.",
+    body: "Speak to others as you'd want to be spoken to on your hardest day. Disagreement is fine, cruelty is not.",
   },
   {
     icon: Users,

@@ -71,7 +71,7 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions, a
                 placeholder="Enter post content here"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className=" w-full resize-none max-h-60 overflow-y-auto     whitespace-pre-wrap break-words box-border border rounded-md p-2"
+                className=" w-full resize-none max-h-60 overflow-y-auto whitespace-pre-wrap break-words box-border border rounded-md p-2"
               />
             </div>
             

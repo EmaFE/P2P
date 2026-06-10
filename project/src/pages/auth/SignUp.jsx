@@ -7,7 +7,7 @@ import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
 import { auth, db } from "../../config/firebase"
-import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -62,8 +62,8 @@ const SignUp = () =>{
       return;
     }
 
-    if(password.length < 6){
-      setError("Please enter a password of at least 6 characters")
+    if(password.length < 8){
+      setError("Please enter a password of at least 8 characters")
       return;
     }
 
@@ -97,6 +97,7 @@ const SignUp = () =>{
       navigate("/")
     } catch(error){
       console.error(error)
+      toast.error("Signing up did not work. Please try again later.")
     }
     
     
@@ -106,11 +107,11 @@ const SignUp = () =>{
     event.preventDefault()
     if (!termsAccepted){
       setError("Please accept the terms and conditions when logging in with Google..")
-      return;
+      return
     } 
     if (!communityRulesAccepted){
       setError("Please accept the community rules when logging in with Google.")
-      return;
+      return
     } 
     try{
       if (error) {
@@ -191,7 +192,7 @@ const SignUp = () =>{
                   />
                 </div>
 
-                <button className='w-32 text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-primary)] rounded-lg px-2 py-2 mt-1 mb-5 shadow-md shadow-grey-100 cursor-pointer inline-block'
+                <button className='w-32 text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-secondary)] rounded-lg px-2 py-2 mt-1 mb-5 shadow-md shadow-grey-100 cursor-pointer inline-block'
                 onClick={changeUsername}
               >
                 Generate
@@ -212,7 +213,7 @@ const SignUp = () =>{
               value={password}
               onChange={setPassword}
               label="Password"
-              placeholder="minimum 6 characters"
+              placeholder="minimum 8 characters"
               type="password"
               onKeyDown={(e) => handleEnter(e, passwordCheckRef)}
             />
@@ -267,15 +268,14 @@ const SignUp = () =>{
 
             <button
               type='submit'
-              className='w-full text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-primary)] rounded-lg px-6 py-3 mt-4 mb-6 shadow-lg shadow-grey-100 cursor-pointer'
-              onClick={handleSignUp}
+              className='w-full text-m font-medium text-white bg-[var(--color-six)] hover:bg-[var(--color-secondary)] rounded-lg px-6 py-3 mt-4 mb-6 shadow-lg shadow-grey-100 cursor-pointer'
             >
               Create Account
             </button>
 
             <p>Already have an account? 
               <Link 
-                className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-primary)]'
+                className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-secondary)]'
                 to="/login"
               > 
                Log in here
@@ -283,7 +283,7 @@ const SignUp = () =>{
             </p>
             <p>or</p>
             <button 
-                className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-primary)] hover:cursor-pointer'
+                className='font-medium text-[var(--color-six)] underline pl-1 hover:text-[var(--color-secondary)] hover:cursor-pointer'
                 onClick={signInWithGoogle}
               > 
               Sign in with Google

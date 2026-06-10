@@ -34,7 +34,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
     const uid = userDoc.docs[0]?.data()?.uid
     try{       
       await createPost({ title: post.title, content: post.content, username: username, uid: uid, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
-      const newPosts = await fetchPosts();
+      const newPosts = await fetchPosts(activeCategory, user);
       setPosts(newPosts);
     } catch (error) {
       console.error("Error creating post:", error);
@@ -72,7 +72,7 @@ React.useEffect(() => {
       //posts match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
       const filterMatchPosts = 
         selectedFilters.length === 0 || 
-        selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
+        selectedFilters.some((filter) => filter !== "Not Removed" ? post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()) : post.tags && !post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
       
       const filterMatchUser = !isUserPressed || post.username.trim().toLowerCase() === isUserPressed.trim().toLowerCase()
 
@@ -98,6 +98,8 @@ React.useEffect(() => {
   }
 
   const visiblePosts = sortedPosts();
+  console.log("visible posts ", visiblePosts)
+  console.log()
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{

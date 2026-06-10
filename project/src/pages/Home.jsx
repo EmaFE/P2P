@@ -1,7 +1,7 @@
 import React from 'react'
 import NavBar from '../components/NavBar'
 import Slider from '../components/Slider'
-import Communities from './communities/Communities'
+import Communities from '../components/Communities'
 import homeImg from '../assets/images/home.png'
 import { useNavigate } from 'react-router-dom'
 import blob from '../assets/images/blobC.svg'
@@ -62,7 +62,7 @@ const Home = () =>{
             <h4 className='mb-4 text-2xl font-semibold text-slate-600'>
               {!user && <button 
                 className='cursor-pointer px-4 py-1 mr-2 bg-[var(--color-six)] text-white rounded-lg border border-transparent mb-4
-                hover:border-slate-200 hover:bg-[var(--color-eight)]/70 hover:shadow-md hover:text-slate-600 decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
+                hover:border-slate-200 hover:bg-pink-800 hover:shadow-md hover:text-white decoration-1 decoration-transparent hover:decoration-current transition-colors duration-200'
                 onClick={() => navigate("/signUp")}
                 >
                   Join us

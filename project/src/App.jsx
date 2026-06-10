@@ -1,18 +1,12 @@
 import React from 'react'
 import './App.css'
 
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom'
-
+import { BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
 import LogIn from './pages/auth/LogIn'
 import SignUp from './pages/auth/SignUp'
 import Home from './pages/Home'
 import CommunityLayout from './pages/communities/CommunityLayout'
-import Communities from './pages/communities/Communities'
+import Communities from './components/Communities'
 import { AuthProvider } from './util/authContext'
 import Anxiety from './pages/communities/Anxiety'
 import Grief from './pages/communities/Grief'

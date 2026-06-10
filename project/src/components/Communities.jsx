@@ -1,5 +1,5 @@
 import React from "react"
-import CommunityCard from "../../components/CommunityCard"
+import CommunityCard from "./CommunityCard"
 
 const Communities = () =>{
 

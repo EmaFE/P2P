@@ -13,6 +13,8 @@ export default function Account () {
   const { user } = React.useContext(Context);
   const [username, setUsername] = React.useState("");
 
+  // console.log("user from account: ", user)
+
   React.useEffect(() => {
     const fetchUsername = async () => {
       const user = await getUser();
@@ -51,7 +53,7 @@ export default function Account () {
               </TabsList>
 
               <TabsContent value="settings" className="mt-4">
-                <AccountSettings></AccountSettings>
+                <AccountSettings user={user}></AccountSettings>
               </TabsContent>
 
               <TabsContent value="activity" className="mt-4">

@@ -12,9 +12,9 @@ import PopUp from "../components/PopUp";
 import { useAuth } from "@/util/authContext";
 
 
-function UpdateEmail({ userDB }) {
+function UpdateEmail({ user, userDB }) {
 
-  // console.log("userdb from update email: ", userDB.email)
+  // console.log("userdb: ", userDB)
 
   const [open, setOpen] = useState(false)
   const [currentEmail, setCurrentEmail] = useState("")
@@ -26,20 +26,28 @@ function UpdateEmail({ userDB }) {
 
 
   const handleVerifyEmail = () => {
-    if (currentEmail.trim().toLowerCase() === userDB.email?.toLowerCase()) {
+    if (currentEmail.trim().toLowerCase() === user.email?.toLowerCase()) {
       setVerifiedEmail(true)
     }
+      //     const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
+      // console.log("credential: ", credential)
+      // console.log("curr password: ", currentPassword.trim())
+      // console.log("credential password: ", credential?._password)
   };
 
   const reauthenticate = async () => {
     if(!currentPassword.trim()) return
     setloadingInput(true)
     try{
-      const credential = EmailAuthProvider.credential(userDB.email, currentPassword.trim())
-      await reauthenticateWithCredential(userDB, credential)
+      const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
+      // console.log("credential: ", credential)
+      // console.log("curr password: ", currentPassword.trim())
+      // console.log("credential password: ", credential?._password)
+      await reauthenticateWithCredential(user, credential)
       setVerifiedPassword(true)
       // console.log("reauth")
     } catch(error){
+      toast.error("Incorrect Password")
       console.log(error)
     } finally {
       setloadingInput(false)
@@ -51,8 +59,8 @@ function UpdateEmail({ userDB }) {
     setloadingInput(true)
     
     try{
-      await verifyBeforeUpdateEmail(userDB, newEmail.trim())
-      const userRef = doc(db, "users", userDB.uid)
+      await verifyBeforeUpdateEmail(user, newEmail.trim())
+      const userRef = doc(db, "users", user.uid)
       await updateDoc(userRef, { email: newEmail.trim() })
       toast.success("Email updated!")
       setOpen(false)
@@ -77,6 +85,8 @@ function UpdateEmail({ userDB }) {
       setNewEmail("")
     }
   };
+
+  console.log("userDB from account settings: ", userDB)
 
   return (
     <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal);}}>
@@ -144,7 +154,7 @@ function UpdateEmail({ userDB }) {
   )
 }
 
-function ChangePassword({ userDB }) {
+function ChangePassword({ user, userDB }) {
   const [open, setOpen] = useState(false)
   const [currentPassword, setCurrentPassword] = useState("")
   const [verifiedPassword, setVerifiedPassword] = useState(false)
@@ -157,8 +167,8 @@ function ChangePassword({ userDB }) {
     if(!currentPassword.trim()) return;
     setloadingInput(true);
     try{
-      const credential = EmailAuthProvider.credential(userDB.email, currentPassword.trim())
-      await reauthenticateWithCredential(userDB, credential)
+      const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
+      await reauthenticateWithCredential(user, credential)
       setVerifiedPassword(true)
       // console.log("reauth")
     } catch(error){
@@ -173,22 +183,22 @@ function ChangePassword({ userDB }) {
       toast.error("Passwords don't match");
       return;
     }
-    if (newPassword.length < 6) {
-      toast.message("Password too short", {description: "Must be at least 6 characters." });
+    if (newPassword.length < 8) {
+      toast.message("Password too short", {description: "Must be at least 8 characters." });
       return;
     }
     setloadingInput(true);
     
     try{
       await updatePassword(getAuth().currentUser, newPassword);
-      toast("Password updated!")
+      toast.success("Password updated!")
       setOpen(false)
       setVerifiedPassword(false)
       setConfirmPassword("")
       setCurrentPassword("")
       setNewPassword("")
     } catch (e) {
-      toast.error("password not updated.")
+      toast.error("Password could not be updated.")
     } finally {
       setloadingInput(false)
     }
@@ -285,8 +295,8 @@ function ChangePassword({ userDB }) {
   return (
     <div className="space-y-3">
       {userDB?.status != "active" && open && <PopUp onClose={() => setOpen(false)} title="Account Suspended" text="Your account is currently suspended. You cannot change your email or password at this time." /> }
-      {userDB && <UpdateEmail userDB={userDB}/> }
-      {userDB && <ChangePassword userDB={userDB}/> }
+      {userDB && <UpdateEmail user={user} userDB={userDB}/> }
+      {userDB && <ChangePassword user={user} userDB={userDB}/> }
 
     </div>
   );

@@ -14,6 +14,7 @@ import { useAuth } from "@/util/authContext";
 import { toast } from "sonner";
 
 const MAX_CONTENT_LENGTH = 50;
+const MAX_TITLE_LENGTH = 35;
 const MAX_VISIBLE_TAGS = 3;
 const TAG_EXPAND_THRESHOLD = 4;
 
@@ -44,8 +45,10 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const [userDB, setUserDB] = useState(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes ?? 0);
+  const [commentsCountS, setCommentsCountS] = useState(commentsCount ?? 0);
   const [bookmarked, setBookmarked] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [expandedTitle, setExpandedTitle] = useState(false);
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsData, setCommentsData] = useState([]);
@@ -56,27 +59,23 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   const needsTruncation = content.length > MAX_CONTENT_LENGTH;
 
+  const titleNeedsTrunc = title.length > MAX_TITLE_LENGTH;
+
   const displayContent = !expanded && needsTruncation ? content.slice(0, MAX_CONTENT_LENGTH) + "…" : content;
+
+  const displayTitle = !expandedTitle && titleNeedsTrunc ? title.slice(0, MAX_TITLE_LENGTH) + "…" : title;
 
   const needsTagExpand = tags?.length > TAG_EXPAND_THRESHOLD ? true : false;
   
   const visibleTags = tagsExpanded ? tags : tags?.slice(0, MAX_VISIBLE_TAGS);
   
   const commentTree = commentsData ? buildCommentTree(commentsData, id) : null;
-
-  const isSuspended = userDB?.status !== "active";
   //console.log(JSON.stringify(commentTree, null, 2));
-  
-  // React.useEffect(() => {
-  //   if (userDB.status !== "active") {
-  //     setSuspended(true);
-  //     setOpen(true);
-  //   }
-  // }, [userDB.status]);
+
 
   const handleLike = async () => {
     //console.log("likeCount before update: " + likeCount)
-    if (isSuspended) {
+    if (userDB.status !== "active") {
       toast.error("Your account is currently suspended. You cannot like posts/comments at this time.")
       return;
     }
@@ -117,18 +116,19 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   }, [id, user?.uid]); //runs user.uid changes
 
-     React.useEffect( () =>{
-        if (!user) return;
-        const fetchUser = async () =>{
-          const userdb = await getUserById(user.uid);
-        setUserDB(userdb);
-        }
-        fetchUser()
-      }, [user.uid]);
+
+  React.useEffect( () =>{
+    if (!user) return;
+    const fetchUser = async () =>{
+      const userdb = await getUserById(user.uid);
+    setUserDB(userdb);
+    }
+    fetchUser()
+  }, [user.uid]);
 
   
   const toggleBookmark = async () => {
-    if (isSuspended) {
+    if (userDB.status !== "active") {
       toast.error("Your account is currently suspended. You cannot bookmark posts/comments at this time.")
       return;
     }
@@ -139,8 +139,8 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   };
 
 
-  const handleReplyToPost = () => {
-    if (isSuspended) {
+  const handleReplyToPost = async () => {
+    if (userDB.status !== "active") {
       toast.error("Your account is currently suspended. You cannot reply to posts/comments at this time.")
       return;
     }
@@ -155,18 +155,18 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   //handle replies to post, NOT comments 
   const handlePostReplySubmit = async (text) => {
-    if (isSuspended) {
+    if (userDB.status !== "active") {
       toast.error("Your account is currently suspended. You cannot reply to comments at this time.")
       return;
     }
 
-    const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-    const userName = userDoc.docs[0]?.data()?.username;
-    const uid = userDoc.docs[0]?.data()?.uid;
+    // const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+    // const userName = userDoc.docs[0]?.data()?.username;
+    // const uid = userDoc.docs[0]?.data()?.uid;
     try {
-      await createComment({ parentId: id, username: userName, uid: uid, content: text, repliedTo: username, postId: id });
-      
+      await createComment({ parentId: id, username: userDB.username, uid: userDB.uid, content: text, repliedTo: username, postId: id });
       //refresh comments
+      setCommentsCountS(prev => prev + 1);
       const data = await fetchComments(id);
       setCommentsData(data);
     } catch (error) {
@@ -194,7 +194,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   }
 
   const handleReport = async () => {
-    if (isSuspended) {
+    if (userDB.status !== "active") {
       toast.error("Your account is currently suspended. You cannot make reports at this time.")
       return;
     }
@@ -207,9 +207,29 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
   return (
     <Card className="w-full max-w-xl">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-lg font-semibold text-card-foreground">{title}</h3>
+      <CardHeader className="pb-2 w-full">
+        <div className="flex min-w-0 overflow-hidden items-start justify-between gap-2">
+          {/* <h3 className="text-lg font-semibold text-card-foreground"> */}
+            {
+              status !== "deleted" ? (
+                <h3 className="text-lg font-semibold min-w-0 text-card-foreground whitespace-pre-wrap break-words">
+                  {displayTitle}
+                  {titleNeedsTrunc && (
+                    <button
+                      onClick={() => setExpandedTitle((prev) => !prev)}
+                      className="ml-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      {expandedTitle ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </h3>
+              ) : (
+                <p className=" italic mt-1 text-md font-semibold text-card-foreground break-words">
+                  [ Removed ]
+                </p>
+              )
+            }
+          {/* </h3> */}
           <span className="shrink-0 text-xs text-muted-foreground">{getRelativeTime(createdAt)}</span>
         </div>
 
@@ -249,7 +269,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
 
           <Button variant="ghost" size="sm" className="gap-1.5 px-2  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleCommentsToggle}>
             <MessageCircle className= "h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{commentsCount}</span>
+            <span className="text-xs text-muted-foreground">{commentsCountS}</span>
             {commentsOpen && <ChevronUp className="h-3 w-3 text-muted-foreground"/>}
             {!commentsOpen && <ChevronDown className="h-3 w-3 text-muted-foreground"/>}
           </Button>
