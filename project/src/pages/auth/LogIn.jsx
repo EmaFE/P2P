@@ -53,7 +53,7 @@ const LogIn = () =>{
       const userDB = await getUserByEmail(email);
 
       if (userDB.status === "banned") {
-        console.log("banned from log in")
+        // console.log("banned from log in")
         setBanOpen(true);
         await signOut(auth);
         return;
@@ -118,7 +118,7 @@ const LogIn = () =>{
         });
       } else {
           if(userDoc.status === "suspended"){
-            console.log("suspended from sign in with google")
+            // console.log("suspended from sign in with google")
             setSusOpen(true)
           }
           if(userDoc.status === "banned"){
@@ -136,7 +136,7 @@ const LogIn = () =>{
           }
       }
     } catch(error){
-        console.log("Error signing in with Google:",error);
+        // console.log("Error signing in with Google:",error);
         toast.error("Signing in with Google did not work. Try again later.")
       }
   }

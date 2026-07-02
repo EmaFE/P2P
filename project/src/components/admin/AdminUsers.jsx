@@ -52,7 +52,7 @@ export default function AdminUsers(){
     const handleActivateUser = async (id) => {
       await dismiss(id, "users", user.uid);
       setUsers((prev) => prev.filter((user) => user.id !== id))
-      console.log("Restore user with id: ", id)
+      // console.log("Restore user with id: ", id)
     }
 
 

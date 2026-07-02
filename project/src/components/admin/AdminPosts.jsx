@@ -25,7 +25,7 @@ export default function AdminPosts(){
       const fetchPostsF = async () =>{
         const fetchedPosts = await fetchPosts("general", user);
         setPosts(fetchedPosts)
-        console.log("Fetched reports: ", fetchedPosts)
+        // console.log("Fetched reports: ", fetchedPosts)
       }
       fetchPostsF();
     }, [refresh]); //fetch all posts, can be optimsied later if needed
@@ -40,8 +40,8 @@ export default function AdminPosts(){
   })
 
    const handleDeletePost = async (reason) => {
-    console.log(user.uid)
-    console.log("Auth UID:", auth.currentUser?.uid);
+    // console.log(user.uid)
+    // console.log("Auth UID:", auth.currentUser?.uid);
     await deleteContent(deleteDialogOpen.post.id, reason, "posts","deleted", user.uid)
     setPosts((prev) => prev.filter((post) => post.id !== deleteDialogOpen.id))
     setRefresh((prev) => prev + 1)
@@ -53,7 +53,7 @@ export default function AdminPosts(){
   const handleRestore = async (id) => {
     await dismiss(id, "posts", user.uid);
     setPosts((prev) => prev.filter((post) => post.id !== id))
-    console.log("Restore post with id: ", id)
+    // console.log("Restore post with id: ", id)
     setRefresh((prev) => prev + 1)
     if (refresh === 10){
       setRefresh(0)

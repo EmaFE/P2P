@@ -10,7 +10,7 @@ export default function ReasonDialog({ open, onOpenChange, title, description, c
   const [reason, setReason] = React.useState("");
 
   const handleConfirm = () =>{
-    console.log("Confirming with reason: ", reason)
+    // console.log("Confirming with reason: ", reason)
     onConfirm(reason)
     setReason("")
     onOpenChange()

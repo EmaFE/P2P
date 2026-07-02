@@ -52,7 +52,7 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
             className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
       </div>
-
+ 
       {/* bottom bar */}
       <div className="flex items-center justify-between border-t px-4 py-3">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-primary">

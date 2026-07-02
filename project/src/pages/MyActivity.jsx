@@ -68,10 +68,10 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
 function ActivityRow({user, id, bookmark=null, postId=null, text1, text2, time, status, onClick, deleteText }) {
 
   // console.log("user from activity row: ", user)
-  console.log("postId from activity row ", postId)
-  console.log("id from activity row ", id)
-  console.log("bookmark id from activity row", bookmark)
-  console.log("delete text from actiity row ", deleteText)
+  // console.log("postId from activity row ", postId)
+  // console.log("id from activity row ", id)
+  // console.log("bookmark id from activity row", bookmark)
+  // console.log("delete text from actiity row ", deleteText)
 
   //based on deleteText decide what to call from firebase (remove like, remove post, remove bm, remove comment) in span onClick
   const deleteFunction = () =>{
@@ -106,7 +106,7 @@ function ActivityRow({user, id, bookmark=null, postId=null, text1, text2, time, 
             if(user.status === "active"){
               deleteFunction();
             } else if (user.status === "suspended"){
-              console.log("errroorororor")
+              // console.log("errroorororor")
               toast.error("Your account has been suspended. You cannot delete any content at this time")
             }
             
@@ -124,7 +124,7 @@ function ActivityRow({user, id, bookmark=null, postId=null, text1, text2, time, 
 
 
 export default function MyActivity ({ user }) {
-  console.log("user from my activity: ", user)
+  // console.log("user from my activity: ", user)
 
   //{} map => no need to manually call fetchPostById for liked / bookmarked posts
   const [userDB, setUserDB] = useState(null);
@@ -154,7 +154,7 @@ export default function MyActivity ({ user }) {
         const fetchedPosts = await fetchPostsByUser(user);
         setPosts(fetchedPosts);
       } catch(error) {
-        console.log(error);
+        // console.log(error);
         toast.error("Could not fetch posts.");
       } finally {
         setLoadingPosts(false);
@@ -166,7 +166,7 @@ export default function MyActivity ({ user }) {
         const fetchedComments = await fetchCommentsByUser(user);
         setComments(fetchedComments);
       } catch(error) {
-        console.log(error);
+        // console.log(error);
         toast.error("Could not fetch comments.");
       } finally {
         setLoadingComments(false);
@@ -188,7 +188,7 @@ export default function MyActivity ({ user }) {
           }
         }
       } catch(error) {
-        console.log(error);
+        // console.log(error);
         toast.error("Could not fetch bookmarks.");
       } finally {
         setLoadingBookmarks(false);
@@ -210,7 +210,7 @@ export default function MyActivity ({ user }) {
           }
         }
       } catch (error) {
-        console.log(error);
+        // console.log(error);
         toast.error("Could not fetch likes.");
       } finally{
         setLoadingLikes(false);

@@ -48,7 +48,7 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
       // console.log("reauth")
     } catch(error){
       toast.error("Incorrect Password")
-      console.log(error)
+      // console.log(error)
     } finally {
       setloadingInput(false)
     }
@@ -70,7 +70,7 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
       setCurrentEmail("")
       setNewEmail("")
     } catch (error) {
-      console.log("error updating email: ", error)
+      // console.log("error updating email: ", error)
       toast.error("Could not update email")
     } finally {
       setloadingInput(false)
@@ -86,7 +86,7 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
     }
   };
 
-  console.log("userDB from account settings: ", userDB)
+  // console.log("userDB from account settings: ", userDB)
 
   return (
     <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal);}}>
@@ -172,7 +172,8 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
       setVerifiedPassword(true)
       // console.log("reauth")
     } catch(error){
-      console.log(error)
+      // console.log(error)
+      toast.error("Incorrect Password")
     } finally {
       setloadingInput(false)
     }
@@ -294,7 +295,7 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
       fetchUser()
     }, [user.uid]);
 
-    console.log("status ", userDB?.status === "active",  "isGoogleUser ", isGoogleUser, "open ", open )
+    // console.log("status ", userDB?.status === "active",  "isGoogleUser ", isGoogleUser, "open ", open )
 
   return (
     <div className="space-y-3">

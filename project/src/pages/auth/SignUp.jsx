@@ -1,14 +1,14 @@
 import React, { use } from 'react'
 import { Link } from 'react-router-dom'
-import generateRandomUsername from 'generate-random-username'
+import { generateUsername } from 'unique-username-generator'
 import AuthLayout from "./AuthLayout"
 import Input from "./Input"
 import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
-import { auth, db, getUserByEmail } from "../../config/firebase"
-import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { auth, db, getUserByEmail, deleteUserAfterRegistration } from "../../config/firebase"
+import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, sendEmailVerification } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp, getDoc, query, collection, where } from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -38,6 +38,7 @@ const SignUp = () =>{
   const [loading, setLoading] = React.useState(true)
   const [communityRulesOpen, setCommunityRulesOpen] = React.useState(false)
   const [communityRulesAccepted, setCommunityRulesAccepted] = React.useState(false)
+  const [showEmailPopUp, setShowEmailPopUp] = React.useState(false)
 
   let navigate = useNavigate()
 
@@ -87,10 +88,10 @@ const SignUp = () =>{
     }
 
     try{
-        console.log("entered if")
+        // console.log("entered if")
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        console.log("user credential: ", userCredential)
-        console.log("user credential uid: ", userCredential.user.uid)
+        // console.log("user credential: ", userCredential)
+        // console.log("user credential uid: ", userCredential.user.uid)
         await setDoc(doc(db, "users", userCredential.user.uid), {
           uid: userCredential.user.uid,
           username: username,
@@ -101,7 +102,11 @@ const SignUp = () =>{
           reportCount: 0,
           suspendCount: 0,
         })
-         navigate("/")
+
+        await sendEmailVerification(userCredential.user)
+
+        setShowEmailPopUp(true)
+        //  navigate("/")
      
     } catch(error){
       console.error(error)
@@ -134,7 +139,7 @@ const SignUp = () =>{
 
       if (!userDoc) {
         //first time => generate username and create document
-        const randomUsername = generateRandomUsername();
+        const randomUsername = await generateUniqueUsername();
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           email: user.email,
@@ -147,7 +152,7 @@ const SignUp = () =>{
         });
       } else{
          if(userDoc.status === "suspended"){
-            console.log("suspended from sign in with google")
+            // console.log("suspended from sign in with google")
             setSusOpen(true)
           }
           if(userDoc.status === "banned"){
@@ -165,10 +170,22 @@ const SignUp = () =>{
           }
       }
     } catch(error){
-        console.log("Error signing in with Google:",error);
+        // console.log("Error signing in with Google:",error);
         toast.error("Signing in with Google did not work. Try again later.")
       } 
       
+  }
+
+  const generateUniqueUsername = async () => {
+    while (true) {
+    const username = generateUsername("-", 2);
+
+    const usernameDoc = await getDoc(doc(db, "usernames", username));
+
+    if (!usernameDoc.exists()) {
+      return username;
+    }
+  }
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -178,9 +195,9 @@ const SignUp = () =>{
     }
   }
 
-  const changeUsername = (e) =>{
+  const changeUsername = async (e) =>{
     e.preventDefault()
-    setUsername(generateRandomUsername())
+    setUsername(await generateUniqueUsername())
   }
 
   const openTerms = (e) =>{
@@ -191,6 +208,40 @@ const SignUp = () =>{
   const openCommunityRules = (e) =>{
     e.preventDefault()
     setCommunityRulesOpen(true)
+  }
+
+  const checkEmailVerification = async () => {
+    await auth.currentUser.reload()
+    if (auth.currentUser.emailVerified) {
+      setShowEmailPopUp(false)
+      navigate("/")
+    } else{
+      toast.error("Email not verified yet. Please check your inbox and verify your email.")
+    }
+  }
+
+  const resendEmailVerification = async () => {
+    try {
+      await sendEmailVerification(auth.currentUser)
+    } catch (error) {
+      console.error("Error resending email verification:", error)
+      toast.error("Failed to resend email verification. Please try again later.")
+    }
+  }
+
+  const cancelRegistration = async () => {
+    try {
+      const user = auth.currentUser
+      if (user) {
+        await deleteUserAfterRegistration(user)
+        await user.delete()
+        setShowEmailPopUp(false)
+        navigate("/signup")
+      }
+    } catch (error) {
+      console.error("Error cancelling registration:", error);
+      toast.error("Failed to cancel registration. Please try again later.")
+    }
   }
 
 
@@ -293,6 +344,20 @@ const SignUp = () =>{
             {susOpen && <PopUp title="Account Suspended" text="Your account has been suspended. You cannot create, and delete posts or comments until the suspension is lifted. You can only read posts and comments. Log in again to access the platform." onClose={() => setSusOpen(false)} />}
             
             {banOpen && <PopUp title="Account Banned" text="Your account has been banned. You cannot access the platform anymore." onClose={() => setBanOpen(false)} />}
+
+            {showEmailPopUp && <PopUp title="Email Verification Sent" text="A verification email has been sent to your email address. Please check your inbox and verify your email before continuing." 
+
+            button1Text="Verified"  
+            button1Action={() => checkEmailVerification()} 
+            
+            button2Text="Resend Email" 
+            button2Action={() => resendEmailVerification()} 
+            
+            button3Text="Cancel Registration" 
+            button3Action={() => cancelRegistration()} 
+            
+            onClose={() => setShowEmailPopUp(false)} />
+            }
 
             <button
               type='submit'

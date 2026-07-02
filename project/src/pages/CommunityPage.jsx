@@ -20,7 +20,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   const [userDB, setUserDB] = useState(null);
   const isMobile  = useIsMobile();
   const [activeCategory, setActiveCategory] = useState(categories[0]);
-  const [selectedFilters, setSelectedFilters] = useState(["Not Removed"]);
+  const [selectedFilters, setSelectedFilters] = useState([]);
   const [selectedSort, setSelectedSort] = useState("Newest");
   const [posts, setPosts] = useState([]);
   const [isNewPost, setIsNewPost] = useState(false);
@@ -72,7 +72,7 @@ React.useEffect(() => {
       //posts match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
       const filterMatchPosts = 
         selectedFilters.length === 0 || 
-        selectedFilters.some((filter) => filter !== "Not Removed" ? post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()) : post.tags && !post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
+        selectedFilters.some((filter) => post.tags && post.tags.map(tag => tag.toLowerCase()).includes(filter.toLowerCase()))
       
       const filterMatchUser = !isUserPressed || post.username.trim().toLowerCase() === isUserPressed.trim().toLowerCase()
 
@@ -98,8 +98,8 @@ React.useEffect(() => {
   }
 
   const visiblePosts = sortedPosts();
-  console.log("visible posts ", visiblePosts)
-  console.log()
+  // console.log("visible posts ", visiblePosts)
+  // console.log()
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
@@ -120,7 +120,7 @@ React.useEffect(() => {
     setUserPressed(username);
   }
 
-  console.log("active category from community page: ", activeCategory)
+  // console.log("active category from community page: ", activeCategory)
 
   return(
     <div className="flex flex-1 top-0">

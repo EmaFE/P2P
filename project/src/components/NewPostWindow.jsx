@@ -23,8 +23,8 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions, a
     updateCategory()
   }, [activeCategory])
 
-  console.log("active category from new post window ", activeCategory)
-  console.log("category ", category)
+  // console.log("active category from new post window ", activeCategory)
+  // console.log("category ", category)
   const handleSubmit = () =>{
     if(title.trim() != "" && content.trim() != "" && category){
       onSubmit({title: title.trim(), content: content.trim(), category: category, tags: tags})

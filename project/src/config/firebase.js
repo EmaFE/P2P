@@ -74,7 +74,8 @@ export async function fetchPosts(categoryN, user) {
 
   }
   catch (error){
-    console.log("error fetching posts: ", error)
+    // console.log("error fetching posts: ", error)
+    toast.error("Error fetching posts. Please try again.")
   }
   
 }
@@ -106,7 +107,7 @@ export async function toggleLikePost(postId, liked, userId) {
       //await deleteDoc(doc(db, "likes", docSnap.id));
     //});
   }
-  console.log("Successfully updated like status");
+  // console.log("Successfully updated like status");
 }
 
 export async function toggleLikeComment(commentId, liked, userId) {
@@ -115,7 +116,7 @@ export async function toggleLikeComment(commentId, liked, userId) {
   await updateDoc(commentRef, { likes: increment(liked ? 1 : -1) });
    if (liked) {
     await addDoc(collection(db, "likes"), { postId: commentId, userId: userId, createdAt: serverTimestamp(), type: "comment" });
-    console.log("Added like document for commentId:", commentId, "userId:", userId);
+    // console.log("Added like document for commentId:", commentId, "userId:", userId);
   } else {
     const q = query(
       collection(db, "likes"),
@@ -219,16 +220,17 @@ export async function reportPost(postId) {
         const postRef = doc(db, "posts", postId);
         await updateDoc(postRef, { status: "reported"});
         toast.success("Post reported. Thank you for helping to keep the community safe!")
-        const userDoc = await getDoc(doc(db, "users", postData.uid));
-        if (userDoc.exists()) {
-          await updateDoc(userDoc.ref, { reportCount: increment(1) });
-          //await updateDoc(doc(db, "users", postData.uid), { reportCount: increment(1) });
+        console.log("postData.uid: ", postData.uid)
+        const userRef = doc(db, "users", postData.uid)
+        console.log("userRef: ", userRef)
+        if (userRef) {
+          await updateDoc(userRef, { reportCount: increment(1) });
         }
       } else {
           toast.success("Post has already been reported and is under review. Thank you for helping to keep the community safe!")
       }
   } catch (error){  
-    // console.log("error reporting post: ", error)
+    console.log("error reporting post: ", error)
     toast.error("Could not report post. Please try again.")
   }
 }
@@ -484,9 +486,9 @@ export async function fetchBookmarksByUser(user) {
 }
 
 export async function fetchPostById (id) {
-    console.log("before post")
+    // console.log("before post")
   const postDoc = await getDoc(doc(db, "posts", id)); 
-    console.log("postDoc ", postDoc)
+    // console.log("postDoc ", postDoc)
   const data = postDoc.data();
   if(data){
     return {
@@ -508,9 +510,9 @@ export async function fetchPostById (id) {
 }
 
 export async function fetchCommentById (id) {
-  console.log("before")
+  // console.log("before")
    const commDoc = await getDoc(doc(db, "comments", id));
-     console.log("coomm doc", commDoc)
+     // console.log("coomm doc", commDoc)
     const data = commDoc.data();
     if (data){
       return {
@@ -557,7 +559,7 @@ export async function deleteComment (commentId, postId){
 
 export async function deleteBookmark (bookmarkId){
   // console.log("Current uid:", auth.currentUser?.uid);
-  console.log("Deleting bookmark:", bookmarkId);
+  // console.log("Deleting bookmark:", bookmarkId);
   try {
     const bookmarkRef = doc(db, "bookmarks", bookmarkId);
     if (bookmarkRef) await deleteDoc(bookmarkRef);
@@ -565,7 +567,7 @@ export async function deleteBookmark (bookmarkId){
   }
   catch (error){
     toast.error("Could not delete bookmark. Please try again.")
-    console.error("error deleting bookmark: ", error)
+    // console.error("error deleting bookmark: ", error)
   }
 }
 
@@ -586,7 +588,7 @@ export async function deletePost (postId){
 }
 
 export async function deleteLike (likeId, postId){
-  console.log("entered delet like")
+  // console.log("entered delet like")
   let success = false;
   let post = false
   let com = false
@@ -600,27 +602,27 @@ export async function deleteLike (likeId, postId){
 
     toast.success("Like deleted successfully!");
     success = true;
-    console.log("deleted like ", likeId, " + " ,postId)
+    // console.log("deleted like ", likeId, " + " ,postId)
   } catch(error){
       toast.error("Could not delete like from post. Please try again.")
-      console.error("error deleting like: ", error)
+      // console.error("error deleting like: ", error)
   }
 
   try{
     if (success){
-      console.log("like id after success ", likeId)
+      // console.log("like id after success ", likeId)
       if (post){
         const postRef = doc(db, "posts", postId)
         if(postRef){
-          console.log("decrente for post like")
+          // console.log("decrente for post like")
           await updateDoc(postRef, {likes: increment(-1)});
           toast.success("decrement number of likes")
         }
       } else  if (com){
-        console.log("post id from comment decrement like ", postId)
+        // console.log("post id from comment decrement like ", postId)
         const comRef = doc(db, "comments", postId)
         if(comRef){
-          console.log("decrente for comment like")
+          // console.log("decrente for comment like")
           await updateDoc(comRef, {likes: increment(-1)});
           toast.success("decrement number of likes")
         }
@@ -685,7 +687,7 @@ export async function deleteContent (id, reason, collection, status, admin_id){
   try {
     const ref = doc(db, collection, id)
    // console.log("before update doc, ref: ", ref)
-    await updateDoc(ref, { status: status, deletionReason: reason, tags:arrayUnion("Not Removed") })
+    await updateDoc(ref, { status: status, deletionReason: reason })
     //console.log("after update")
     toast.success("Content successfully deleted!")
      //if a comment is deleted, decrement the comment count on the post
@@ -784,4 +786,15 @@ export async function fetchLogs(){
       impacted_username: data.impacted_username,
     }
   })
+}
+
+export async function deleteUserAfterRegistration(user) {
+  try {
+    console.log("Deleting user after registration:", user.uid);
+    await deleteDoc(doc(db, "users", user.uid));
+  }
+    catch (error) {
+      toast.error("Could not delete user. Please try again.")
+      console.error("error deleting user: ", error)
+    }
 }

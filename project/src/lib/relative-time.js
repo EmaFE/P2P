@@ -11,7 +11,7 @@ if (date && typeof date.toDate === "function") {
 } else if (date instanceof Date) {
     jsDate = date; 
 } else{
-    console.warn("Invalid date format passed to getRelativeTime:", date);
+    // console.warn("Invalid date format passed to getRelativeTime:", date);
     return "";  
 }
   const diff = now - jsDate.getTime();

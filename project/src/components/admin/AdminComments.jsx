@@ -23,7 +23,7 @@ export default function AdminComments(){
       const fetchCommentsF = async () =>{
         const fetchedComments = await fetchAllComments();
         setComments(fetchedComments)
-        console.log("Fetched comments: ", fetchedComments)
+        // console.log("Fetched comments: ", fetchedComments)
       }
       fetchCommentsF();
     }, [refresh]); //fetch all comments, can be optimsied later if needed
@@ -38,7 +38,7 @@ export default function AdminComments(){
   })
 
    const handleDeleteComment = async (reason) => {
-    console.log("com id: ", user.uid)
+    // console.log("com id: ", user.uid)
     await deleteContent(deleteDialogOpen.comment.id, reason, "comments", "deleted", user.uid)
     setComments((prev) => prev.filter((comment) => comment.id !== deleteDialogOpen.id))
     setRefresh((prev) => prev + 1)

@@ -308,15 +308,6 @@ export default function Post({ id, title, content, username, createdAt, likes, c
                 <DropdownMenuItem className=" cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handleReport}>
                   <Flag className="mr-2 h-4 w-4" /> Report Post
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    toast.success("Post URL copied to clipboard!");
-                  }}
-                >
-                  <Share2 className="mr-2 h-4 w-4" /> Share
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

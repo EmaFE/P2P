@@ -48,9 +48,9 @@ const NavBar = () =>{
       <button className='cursor-pointer mb-1 border-none underline underline-offset-4 decoration-1 decoration-transparent hover:decoration-current hover:text-pink-800 transition-[text-decoration-color] duration-500 text-xl text-left py-3'
       onClick={ (e) =>{
         e.preventDefault()
-        logOut()
+        auth.currentUser ? logOut() : navigate("/login")
       }}
-      >Log Out</button>
+      >{auth.currentUser ? "Log Out" : "Log In"}</button>
     </>
   )
   

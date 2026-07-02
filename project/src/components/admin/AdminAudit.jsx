@@ -19,7 +19,7 @@ export default function AdminAudit(){
     const fetchLogsF = async () =>{
       const fetchedLogs = await fetchLogs();
       setLogs(fetchedLogs)
-      console.log("Fetched logs: ", fetchedLogs)
+      // console.log("Fetched logs: ", fetchedLogs)
     }
     fetchLogsF();
   }, [logs.length]); //fetch all logs, can be optimsied later if needed
