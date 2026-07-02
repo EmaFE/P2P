@@ -31,11 +31,12 @@ export default function AdminUsers(){
     }, []); //runs once, but listener staus active
   
     const filteredUsers= users.filter((user) =>{
-      const matchesSearch = user.username.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase()) || user.uid.toLowerCase().includes(search.toLowerCase()) || user.createdAt.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = user.username.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase()) || user.uid.toLowerCase().includes(search.toLowerCase()) || user.createdAt.toLowerCase().includes(search.toLowerCase()) || user.reason.toLowerCase().includes(search.toLowerCase())
       if (filter === "All") return matchesSearch;
       if (filter === "Active") return matchesSearch && user.status === "active";
       if (filter === "Suspended") return matchesSearch && user.status === "suspended";
       if (filter === "Banned") return matchesSearch && user.status === "banned";
+      if (filter === "Report No.")  return matchesSearch && user.reportCount > 0;
       return matchesSearch;
     })
   
@@ -65,7 +66,7 @@ export default function AdminUsers(){
           <Input placeholder="Search posts..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
         </div>
         <div>
-          {["All", "Active", "Suspended", "Banned"].map((status) =>{
+          {["All", "Active", "Suspended", "Banned", "Report No."].map((status) =>{
             return (
               <Button key={status} variant={filter === status ? "default" : "outline"} size="sm" onClick ={() => setFilter(status)}>
                 {status}
@@ -81,6 +82,7 @@ export default function AdminUsers(){
             <TableHead>Username</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Joined</TableHead>
+            <TableHead>Report Count</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-center">Action</TableHead>
           </TableHeader>
@@ -109,6 +111,8 @@ export default function AdminUsers(){
                   <TableCell className="text-sm">{user.email}</TableCell>
 
                   <TableCell className="text-sm">{getRelativeTime(user.createdAt)}</TableCell>
+
+                  <TableCell className="text-sm text-center">{user.reportCount}</TableCell>
 
                   <TableCell>
                     <div className="flex gap-1">
