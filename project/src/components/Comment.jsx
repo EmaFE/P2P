@@ -14,7 +14,7 @@ import PopUp from "./PopUp";
 const COLLAPSED_REPLY_LIMIT = 4;
 const MAX_CONTENT_LENGTH = 50;
 
-
+ 
 function CommentItem({ comment, onReplyClick, postId }) {
 
   const { user } = useAuth();

@@ -13,7 +13,7 @@ export default function Account () {
   const { user } = React.useContext(Context);
   const [username, setUsername] = React.useState("");
 
-  // console.log("user from account: ", user)
+  console.log("user from account: ", user)
 
   React.useEffect(() => {
     const fetchUsername = async () => {

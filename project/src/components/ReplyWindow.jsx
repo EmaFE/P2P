@@ -18,11 +18,11 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
     setText("");
     onClose();
   };
-
+ 
   return (
      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm" >
-      <div className="w-full max-w-lg mx-4 flex flex-col rounded-xl border border-border bg-card shadow-lg max-h-[80vh]" onClick={(e) => e.preventDefault()}>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="w-full max-w-lg mx-4 flex flex-col rounded-xl border bg-card shadow-lg max-h-[80vh]" onClick={(e) => e.preventDefault()}>
+      <div className="flex items-center justify-between px-4 py-3 border-b">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
           <X className="h-5 w-5 text-foreground" />
         </Button>
@@ -41,7 +41,7 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
             </p>
           </div>
 
-        {/* Reply input */}
+        {/* reply input */}
         
           <textarea
             ref={textareaRef}
@@ -53,8 +53,8 @@ export default function ReplyWindow({ comment, onClose, onSubmit }) {
           />
       </div>
 
-      {/* Bottom bar */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
+      {/* bottom bar */}
+      <div className="flex items-center justify-between border-t px-4 py-3">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-primary">
           <ImagePlus className="h-5 w-5" />
         </Button>

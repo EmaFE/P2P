@@ -6,7 +6,7 @@ import Input from "./Input"
 import { validateEmail, checkPassword } from '../../util/helper'
 import { useNavigate } from 'react-router-dom'
 
-import { auth, db } from "../../config/firebase"
+import { auth, db, getUserByEmail } from "../../config/firebase"
 import { createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import CommunityRules from '../../components/CommunityRules'
 import TermsAndConditions from '../../components/Terms'
 import { toast } from 'sonner'
+import PopUp from '@/components/PopUp'
 
 
 const SignUp = () =>{
@@ -32,6 +33,9 @@ const SignUp = () =>{
   const [username, setUsername] = React.useState('')
   const [termsAccepted, setTermsAccepted] = React.useState(false)
   const [termsOpen, setTermsOpen] = React.useState(false)
+  const [susOpen, setSusOpen] = React.useState(false)
+  const [banOpen, setBanOpen] = React.useState(false)
+  const [loading, setLoading] = React.useState(true)
   const [communityRulesOpen, setCommunityRulesOpen] = React.useState(false)
   const [communityRulesAccepted, setCommunityRulesAccepted] = React.useState(false)
 
@@ -83,21 +87,25 @@ const SignUp = () =>{
     }
 
     try{
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        username: username,
-        email: email,
-        createdAt: serverTimestamp(),
-        status: "active",
-        role: "user",
-        reportCount: 0,
-        suspendCount: 0,
-      });
-      navigate("/")
+        console.log("entered if")
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+        console.log("user credential: ", userCredential)
+        console.log("user credential uid: ", userCredential.user.uid)
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          uid: userCredential.user.uid,
+          username: username,
+          email: email,
+          createdAt: serverTimestamp(),
+          status: "active",
+          role: "user",
+          reportCount: 0,
+          suspendCount: 0,
+        })
+         navigate("/")
+     
     } catch(error){
       console.error(error)
-      toast.error("Signing up did not work. Please try again later.")
+      toast.error("Signing up did not work or user already exists.")
     }
     
     
@@ -121,7 +129,7 @@ const SignUp = () =>{
       const result = await signInWithPopup(auth, provider);
       const email = result.user.email
       //check if user already exists in users db
-      const userDoc = getUserByEmail(email);
+      const userDoc = await getUserByEmail(email);
       const user = result.user;
 
       if (!userDoc) {
@@ -137,13 +145,29 @@ const SignUp = () =>{
           reportCount: 0,
           suspendCount: 0,
         });
+      } else{
+         if(userDoc.status === "suspended"){
+            console.log("suspended from sign in with google")
+            setSusOpen(true)
+          }
+          if(userDoc.status === "banned"){
+            setBanOpen(true)
+            await signOut(auth)
+          }
+          if(userDoc.status === "active"){
+            navigate("/")
+          }
+
+          setLoading(false)
+          
+          if(!loading && !susOpen){
+            navigate("/")
+          }
       }
     } catch(error){
         console.log("Error signing in with Google:",error);
-        toast.error("Signing in with Google did not work. Try again later.");
-    } finally{
-        navigate("/")
-    }
+        toast.error("Signing in with Google did not work. Try again later.")
+      } 
       
   }
 
@@ -174,7 +198,7 @@ const SignUp = () =>{
     <AuthLayout>
       <div className="lg:w-[100%] h-auto md:h-full flex flex-col justify-center">
         <h3 className="text-xl font-semibold text-black">Create an account!</h3>
-        <p className="text-xs text-slate-700 mt-[5px] mb-6">Join us by enetering your details below.</p>
+        <p className="text-xs text-slate-700 mt-[5px] mb-6">Join us by entering your details below.</p>
 
         <form onSubmit={handleSignUp}>
           {/*generate random username; focus-within only works in parent element*/}
@@ -265,6 +289,10 @@ const SignUp = () =>{
                 </FieldLabel>
               </Field>
             </FieldGroup>
+
+            {susOpen && <PopUp title="Account Suspended" text="Your account has been suspended. You cannot create, and delete posts or comments until the suspension is lifted. You can only read posts and comments. Log in again to access the platform." onClose={() => setSusOpen(false)} />}
+            
+            {banOpen && <PopUp title="Account Banned" text="Your account has been banned. You cannot access the platform anymore." onClose={() => setBanOpen(false)} />}
 
             <button
               type='submit'

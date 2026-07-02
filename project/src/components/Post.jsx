@@ -204,7 +204,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
   const handlePostfromReflection = async () => {
     await createPost({ title: title, content:content, username: username, uid: user.uid, tags: tags, activeCategory: "general", communityName: "anxiety" })
   }
-
+ 
   return (
     <Card className="w-full max-w-xl">
       <CardHeader className="pb-2 w-full">
@@ -279,7 +279,7 @@ export default function Post({ id, title, content, username, createdAt, likes, c
             <span className="text-xs text-muted-foreground">Comment</span>
           </Button>
 
-          { category.toLowerCase() === "reflections" && (
+          { category.toLowerCase() === "drafts" && (
             <Button variant="ghost" size="sm" className="gap-1.5 px-2  cursor-pointer transition duration-300 hover:scale-105 hover:shadow-l" onClick={handlePostfromReflection}>
               <Plus className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Post</span>

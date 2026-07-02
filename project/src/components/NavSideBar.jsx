@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { logOut } from "../config/firebase";
 
 const NavSideBar = () =>{
-
+ 
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = React.useState(false);
   const [crisisOpen, setCrisisOpen] = React.useState(false);
@@ -41,7 +41,7 @@ const NavSideBar = () =>{
   const sidebarContent = (
       <nav className="sticky flex flex-col h-screen gap-2 p-4 z-[100] bg-white">
         { rulesOpen && <CommunityRules open={rulesOpen} onOpenChange={setRulesOpen} /> }
-        { crisisOpen && <PopUp title="Crisis Support" text="Please contact 112 for professional help" onClose={() => setCrisisOpen(false)} />}
+        { crisisOpen && <PopUp title="Crisis Support" text="Please contact the crisis helpline at 1800 247 247 or text 'HELP' to 51444" onClose={() => setCrisisOpen(false)} />}
         {
           items.map((item) =>{
             if (item.title === "Communities"){
@@ -122,14 +122,14 @@ const NavSideBar = () =>{
         {/*slide-in sidebar */}
         <aside
           className={cn(
-            "fixed overflow-y h-full top-0 left-0 w-64 border-r z-10  bg-white transform transition-transform duration-300 ease-in-out",
+            "fixed overflow-y h-full top-0 left-0 w-64 border-r z-10 bg-white transform transition-transform duration-300 ease-in-out",
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
           <div className="pt-16">{sidebarContent}</div>
         </aside>
       </>
-    );
+    )
   }
   return (
     <aside className="sticky top-0 h-screen w-64 border-r flex-shrink-0">

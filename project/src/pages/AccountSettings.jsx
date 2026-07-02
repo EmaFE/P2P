@@ -133,7 +133,7 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
         </div>
         )}
         {verifiedPassword && (
-          <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+          <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground">New Email</label>
             <div className="flex gap-2">
               <Input
@@ -242,7 +242,7 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
           </div>
         </div>
         {verifiedPassword && (
-          <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="space-y-3">
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">New Password</label>
               <Input

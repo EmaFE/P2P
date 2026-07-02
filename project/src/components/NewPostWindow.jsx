@@ -16,7 +16,15 @@ const NewPostWindow = ({ open, onOpenChange, onSubmit, categories, tagOptions, a
   const [category, setCategory] = React.useState(activeCategory);
   const [tags, setTags] = React.useState([]);
 
+  React.useEffect(() =>{
+    const updateCategory = () =>{
+       if (category !== activeCategory) setCategory(activeCategory);
+    }
+    updateCategory()
+  }, [activeCategory])
 
+  console.log("active category from new post window ", activeCategory)
+  console.log("category ", category)
   const handleSubmit = () =>{
     if(title.trim() != "" && content.trim() != "" && category){
       onSubmit({title: title.trim(), content: content.trim(), category: category, tags: tags})

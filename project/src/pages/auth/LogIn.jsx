@@ -53,8 +53,9 @@ const LogIn = () =>{
       const userDB = await getUserByEmail(email);
 
       if (userDB.status === "banned") {
-        await signOut(auth);
+        console.log("banned from log in")
         setBanOpen(true);
+        await signOut(auth);
         return;
       }
 
@@ -70,6 +71,7 @@ const LogIn = () =>{
 
       if(!loading && !susOpen){
         navigate("/")
+        setLoading(true)
       }
 
     } catch (error) {
@@ -98,15 +100,8 @@ const LogIn = () =>{
       const result = await signInWithPopup(auth, provider);
       const email = result.user.email
       //check if user already exists in users db
-      const userDoc = getUserByEmail(email);
+      const userDoc = await getUserByEmail(email);
       const user = result.user;
-
-      if(userDoc?.status === "suspended"){
-        setSusOpen(true)
-      }
-      if(userDoc?.status === "banned"){
-        setBanOpen(true)
-      }
 
       if (!userDoc) {
         //first time => generate username and create document
@@ -121,14 +116,29 @@ const LogIn = () =>{
           reportCount: 0,
           suspendCount: 0,
         });
+      } else {
+          if(userDoc.status === "suspended"){
+            console.log("suspended from sign in with google")
+            setSusOpen(true)
+          }
+          if(userDoc.status === "banned"){
+            setBanOpen(true)
+            await signOut(auth)
+          }
+          if(userDoc.status === "active"){
+            navigate("/")
+          }
+
+          setLoading(false)
+
+          if(!loading && !susOpen){
+            navigate("/")
+          }
       }
     } catch(error){
         console.log("Error signing in with Google:",error);
-        toast.error("Signing in with Google did not work. Try again later.");
-    } finally{
-        navigate("/")
-    }
-  
+        toast.error("Signing in with Google did not work. Try again later.")
+      }
   }
 
   const handleEnter = (e, nextRef) =>{

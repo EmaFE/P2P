@@ -65,9 +65,13 @@ function ActivityOpt ({icon, label, data, defaultText, loading, render}){
   )
 }
 
-function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, status, onClick, deleteText }) {
+function ActivityRow({user, id, bookmark=null, postId=null, text1, text2, time, status, onClick, deleteText }) {
 
   // console.log("user from activity row: ", user)
+  console.log("postId from activity row ", postId)
+  console.log("id from activity row ", id)
+  console.log("bookmark id from activity row", bookmark)
+  console.log("delete text from actiity row ", deleteText)
 
   //based on deleteText decide what to call from firebase (remove like, remove post, remove bm, remove comment) in span onClick
   const deleteFunction = () =>{
@@ -75,7 +79,7 @@ function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, statu
       case "delete post": return deleteContent(id, "user deletion", "posts", "deleted", user.uid);
       case "delete comment": return deleteContent(id, "user deletion", "comments", "deleted", user.uid);
       case "remove like": return deleteLike(id, postId);
-      case "remove bookmark": return deleteBookmark(bookmark, "user deletion", "bookmarks", "deleted", user.uid);
+      case "remove bookmark": return deleteBookmark(bookmark);
       default: return () => {};
     }
   }
@@ -87,19 +91,25 @@ function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, statu
     <div onClick={onClick} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:cursor-pointer hover:scale-101 hover:bg-white/80 hover:shadow-l rounded-xl">
       <div className="flex-1 py-[0.5px]">
         {status === "deleted" && (
-          <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">[Deleted]</p>
+          <p className="text-sm font-medium text-card-foreground mb-3">[Deleted]</p>
         )}
         {status === "active" && (
-        <p className="text-sm font-medium text-card-foreground line-clamp-1 mb-3">{text1.slice(0,15)}...</p>
+        <p className="text-sm font-medium text-card-foreground mb-3">{text1.slice(0,15)}...</p>
         )}
-          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{text2.slice(0,15)}...</p>}
+          {text2 && status !== "deleted" && <p className="mt-0.5 text-xs text-muted-foreground">{text2.slice(0,15)}...</p>}
       </div>
       <div className="relative group flex flex-col items-end gap-1 py-[1px] px-1">
         {time && <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{time}</span>}
          <button 
           onClick={(e) => {
-            e.stopPropagation();
-            deleteFunction();
+            e.stopPropagation()
+            if(user.status === "active"){
+              deleteFunction();
+            } else if (user.status === "suspended"){
+              console.log("errroorororor")
+              toast.error("Your account has been suspended. You cannot delete any content at this time")
+            }
+            
           }}
         >
          <Trash2 className="h-5 w-5 text-muted-foreground hover:cursor-pointer hover:text-red-400" />
@@ -114,7 +124,7 @@ function ActivityRow({user, id, bookmark=null, postId, text1, text2, time, statu
 
 
 export default function MyActivity ({ user }) {
-  // console.log("user from my activity: ", user)
+  console.log("user from my activity: ", user)
 
   //{} map => no need to manually call fetchPostById for liked / bookmarked posts
   const [userDB, setUserDB] = useState(null);
@@ -191,8 +201,13 @@ export default function MyActivity ({ user }) {
         setLikes(fetchedLikes);
         //set the actual liked posts
         for(const like of fetchedLikes){
-          const post = await fetchPostById(like.postId);
-          if (post) setLikedPosts((prev) => ({...prev, [like.postId]: post}));
+          if (like.type === "post"){
+             const post = await fetchPostById(like.postId);
+             if (post) setLikedPosts((prev) => ({...prev, [like.postId]: post}))
+          } else if (like.type === "comment") {
+            const comment = await fetchCommentById(like.postId);
+              if (comment) setLikedPosts((prev) => ({...prev, [like.postId]: comment}))
+          }
         }
       } catch (error) {
         console.log(error);
@@ -213,7 +228,7 @@ export default function MyActivity ({ user }) {
     return (
       <ActivityRow
         key={post.id}
-        user={user}
+        user={userDB}
         id={post.id}
         text1={post.title}
         text2={post.content}
@@ -230,7 +245,7 @@ export default function MyActivity ({ user }) {
       return(
         <ActivityRow
           key={comment.id}
-          user={user}
+          user={userDB}
           id={comment.id}
           postId={comment.postId}
           text1={comment.content}
@@ -258,7 +273,7 @@ export default function MyActivity ({ user }) {
       return (
         <ActivityRow
           key={com.id}
-          user={user}
+          user={userDB}
           id={com.id}
           bookmark={bookmark.id}
           postId={com.postId}
@@ -274,8 +289,9 @@ export default function MyActivity ({ user }) {
       return (
         <ActivityRow
           key={post.id}
-          user={user}
+          user={userDB}
           id={post.id}
+          postId={post.id}
           bookmark={bookmark.id}
           text1={ post ? post.title : ""}
           text2={post ? post.content : ""}
@@ -290,23 +306,66 @@ export default function MyActivity ({ user }) {
   }
 
   const renderLike = (like) =>{
-    const post = likedPosts[like.postId]
-    if(post){
-      return (
-        <ActivityRow
-          key={post.id}
-          user={user}
-          id={like.id}
-          postId={post.id}
-          text1={post ? post.title : ""}
-          text2={post.content}
-          time={getRelativeTime(post.createdAt)}
-          status={post.status}
-          onClick={() => openPost(post.id)}
-          deleteText="remove like"
-        />
-      )
-    }    
+
+    let com = null
+    let post = null
+    if (like.type === "comment"){
+      com = likedPosts[like.postId]
+    } else if (like.type === "post"){
+      post = likedPosts[like.postId]
+    }
+      if (com !== null){
+        return (
+          <ActivityRow
+            key={com.id}
+            user={userDB}
+            id={like.id}
+            postId={com.id}
+            text1={com.content}
+            text2={com.repliedTo ? `replied to @${com.repliedTo}` : null}
+            time={getRelativeTime(com.createdAt)}
+            status={com.status}
+            onClick={() => openPost(com.postId || com.parentId, com)}
+            deleteText="remove like"
+          />
+        )
+      } else if (post !== null){
+        return (
+          <ActivityRow
+            key={post.id}
+            user={userDB}
+            id={like.id}
+            postId={post.id}
+            text1={ post ? post.title : ""}
+            text2={post ? post.content : ""}
+            time={getRelativeTime(post.createdAt)}
+            status={post.status}
+            onClick={() => setExpandedPost(post)}
+            deleteText="remove like"
+          />
+        )
+      }
+
+
+
+    // const post = likedPosts[like.postId]
+    // console.log("post from render like ", post)
+    // if(post){
+    //   return (
+    //     <ActivityRow
+    //       key={post.id}
+    //       user={userDB}
+    //       id={like.id}
+    //       postId={post.id}
+    //       text1={post ? post.title : ""}
+    //       text2={post.content}
+    //       time={getRelativeTime(post.createdAt)}
+    //       status={post.status}
+    //       onClick={() => openPost(post.id)}
+    //       deleteText="remove like"
+    //     />
+    //   )
+    // }    
   }
 
   const openPost = async (postId, comment = null, bookmark = null) => {

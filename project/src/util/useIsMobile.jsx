@@ -1,5 +1,6 @@
 import * as React from "react"
 
+//code snippet taken from https://dev.to/saiful7778/detecting-mobile-devices-in-react-with-a-custom-hook-4gil
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {

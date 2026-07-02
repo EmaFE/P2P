@@ -20,7 +20,7 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
   const [userDB, setUserDB] = useState(null);
   const isMobile  = useIsMobile();
   const [activeCategory, setActiveCategory] = useState(categories[0]);
-  const [selectedFilters, setSelectedFilters] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState(["Not Removed"]);
   const [selectedSort, setSelectedSort] = useState("Newest");
   const [posts, setPosts] = useState([]);
   const [isNewPost, setIsNewPost] = useState(false);
@@ -64,8 +64,8 @@ React.useEffect(() => {
 
       const categoryMatch = post.category && post.category.toLowerCase() === activeCategory.toLowerCase()
 
-       //block private posts (from reflections in anxiety) from other users
-      const isPrivate = post.category?.toLowerCase() === "reflections";
+       //block private posts (from reflections/drafts in anxiety) from other users
+      const isPrivate = post.category?.toLowerCase() === "drafts";
       const isOwnPost = post.uid === user.uid;
       if (isPrivate && !isOwnPost) return false;
 
@@ -120,6 +120,8 @@ React.useEffect(() => {
     setUserPressed(username);
   }
 
+  console.log("active category from community page: ", activeCategory)
+
   return(
     <div className="flex flex-1 top-0">
       <main className="flex flex-col flex-1">
@@ -160,7 +162,7 @@ React.useEffect(() => {
                       <SheetContent side="right" className="w-72 p-0">
                         <div className="p-4 space-y-6 pt-10">
                           <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-3">
+                            <h3 className="text-sm font-bold uppercase tracking-wide text-pink-800 mb-3">
                               Filter by
                             </h3>
                             <ScrollArea className="h-40">

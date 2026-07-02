@@ -6,6 +6,8 @@ import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
 import { signOut } from "firebase/auth";
+import { concat } from "firebase/firestore/pipelines";
+import { comma } from "postcss/lib/list";
 
 
 const firebaseConfig = {
@@ -27,10 +29,11 @@ export async function fetchPosts(categoryN, user) {
   categoryN = categoryN.toLowerCase();
   // console.log("fetch posts from firbease called: ", categoryN, user.uid)
 
-  if (categoryN === "reflections") {
+  //was reflections
+  if (categoryN === "drafts") {
     q = query(
       collection(db, "posts"),
-      where("category", "==", "reflections"),
+      where("category", "==", "drafts"),
       where("uid", "==", user.uid),
     );
   } else {
@@ -89,7 +92,7 @@ export async function toggleLikePost(postId, liked, userId) {
   await updateDoc(postRef, { likes: increment(liked ? 1 : -1) });
   
   if (liked) {
-    await addDoc(collection(db, "likes"), { postId: postId, userId: userId, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "likes"), { postId: postId, userId: userId, createdAt: serverTimestamp(), type: "post" });
     // console.log("Added like document for postId:", postId, "userId:", userId);
   } else{
     const q = query(
@@ -111,7 +114,7 @@ export async function toggleLikeComment(commentId, liked, userId) {
   const commentRef = doc(db, "comments", commentId);
   await updateDoc(commentRef, { likes: increment(liked ? 1 : -1) });
    if (liked) {
-    await addDoc(collection(db, "likes"), { postId: commentId, userId: userId, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "likes"), { postId: commentId, userId: userId, createdAt: serverTimestamp(), type: "comment" });
     console.log("Added like document for commentId:", commentId, "userId:", userId);
   } else {
     const q = query(
@@ -456,6 +459,7 @@ export async function fetchLikesByUser (user) {
       id:docSnap.id,
       uid: data.userId,
       postId: data.postId,
+      type: data.type,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
     }
   });
@@ -480,7 +484,9 @@ export async function fetchBookmarksByUser(user) {
 }
 
 export async function fetchPostById (id) {
+    console.log("before post")
   const postDoc = await getDoc(doc(db, "posts", id)); 
+    console.log("postDoc ", postDoc)
   const data = postDoc.data();
   if(data){
     return {
@@ -502,12 +508,13 @@ export async function fetchPostById (id) {
 }
 
 export async function fetchCommentById (id) {
+  console.log("before")
    const commDoc = await getDoc(doc(db, "comments", id));
+     console.log("coomm doc", commDoc)
     const data = commDoc.data();
-    // console.log("post doc data: ",data);
-    return {
+    if (data){
+      return {
       id: commDoc.id,
-      title: data.title ?? "",
       content: data.content,
       username: data.username,
       uid: data.uid,
@@ -518,6 +525,10 @@ export async function fetchCommentById (id) {
       category: data.category ?? null,
       status: data.status ?? "active",
       community: data.community ?? null,
+      repliedTo: data.repliedTo,
+      postId: data.postId,
+      parentId: data.parentId,
+      }
     }
 }
 
@@ -546,7 +557,7 @@ export async function deleteComment (commentId, postId){
 
 export async function deleteBookmark (bookmarkId){
   // console.log("Current uid:", auth.currentUser?.uid);
-  // console.log("Deleting bookmark:", bookmarkId);
+  console.log("Deleting bookmark:", bookmarkId);
   try {
     const bookmarkRef = doc(db, "bookmarks", bookmarkId);
     if (bookmarkRef) await deleteDoc(bookmarkRef);
@@ -554,7 +565,7 @@ export async function deleteBookmark (bookmarkId){
   }
   catch (error){
     toast.error("Could not delete bookmark. Please try again.")
-    // console.error("error deleting bookmark: ", error)
+    console.error("error deleting bookmark: ", error)
   }
 }
 
@@ -575,28 +586,70 @@ export async function deletePost (postId){
 }
 
 export async function deleteLike (likeId, postId){
+  console.log("entered delet like")
+  let success = false;
+  let post = false
+  let com = false
   try {
     const likeRef = doc(db, "likes", likeId);
+    const likeDoc = await getDoc(likeRef)
+    const likeData = likeDoc.data()
+    if (likeData && likeData.type === "post") post = true
+    if (likeData && likeData.type === "comment") com = true
     await deleteDoc(likeRef);
 
     toast.success("Like deleted successfully!");
+    success = true;
+    console.log("deleted like ", likeId, " + " ,postId)
+  } catch(error){
+      toast.error("Could not delete like from post. Please try again.")
+      console.error("error deleting like: ", error)
+  }
 
-    //decrement like count from post or comment
-    const postRef = doc(db, "posts", postId)
-    const postSnap = await getDoc(postRef)
-    if(postSnap.exists()){
-      await updateDoc(postRef, {likes: increment(-1)});
-    } else {
-      const commentRef = doc(db, "comments", postId)
-      const postSnap = await getDoc(commentRef)
-      if(postSnap.exists()){
-        await updateDoc(commentRef, {likes: increment(-1)});
+  try{
+    if (success){
+      console.log("like id after success ", likeId)
+      if (post){
+        const postRef = doc(db, "posts", postId)
+        if(postRef){
+          console.log("decrente for post like")
+          await updateDoc(postRef, {likes: increment(-1)});
+          toast.success("decrement number of likes")
+        }
+      } else  if (com){
+        console.log("post id from comment decrement like ", postId)
+        const comRef = doc(db, "comments", postId)
+        if(comRef){
+          console.log("decrente for comment like")
+          await updateDoc(comRef, {likes: increment(-1)});
+          toast.success("decrement number of likes")
+        }
       }
-    }
+    
+
+       //decrement like count from post or comment
+      // console.log("decrente for post like att")
+      // const postRef = doc(db, "posts", postId)
+      // const postSnap = await getDoc(postRef)
+      // console.log("post snap", postSnap)
+      // if(postSnap.exists()){
+      //   console.log("decrente for post like")
+      //   await updateDoc(postRef, {likes: increment(-1)});
+      // } else {
+      //   console.log("decrente for comment like attt")
+      //   const commentRef = doc(db, "comments", postId)
+      //   const postSnap = await getDoc(commentRef)
+      //   if(postSnap.exists()){
+      //     console.log("decrente for comment like")
+      //     await updateDoc(commentRef, {likes: increment(-1)});
+      //   }
+      // }
+      success=false;
+     }
   }
   catch (error){
-    toast.error("Could not delete like from post. Please try again.")
-    // console.error("error deleting like: ", error)
+    toast.error("Could not decrement number of likess.")
+    console.error("error deleting like: ", error)
   }
 }
 

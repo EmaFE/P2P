@@ -29,7 +29,7 @@ export default function Admin() {
       <div className="mx-auto max-w-5xl px-4">
         <div className="mb-6 flex mt-5 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={(e) => {e.preventDefault(), logOut()}}>
-            <ArrowLeft className="h-5 w-5"  data-tooltip="#transition_tooltip"/>
+            <ArrowLeft className="h-5 w-5"/>
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
