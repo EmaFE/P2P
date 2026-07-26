@@ -19,10 +19,6 @@ A community and support platform built with React and Firebase.
 
 ### 1. Clone the repo
 
-```bash
-git clone https://github.com/EmaFE/P2P.git
-```
-
 ### 2. Install dependencies
 
 ```bash
