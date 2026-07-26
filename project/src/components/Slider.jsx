@@ -1,8 +1,6 @@
 import React from "react";
-
-
-const Slider = ({ pic: Icon, name, description, pos, bgColor, isVisible, duration}) =>{
-
+const Slider = ({ pic: Icon, name, description, bgColor, isVisible, duration}) =>{
+  
   return(
     <>
       <div className={`flex md:flex
@@ -18,7 +16,6 @@ const Slider = ({ pic: Icon, name, description, pos, bgColor, isVisible, duratio
           <h2 className="text-md md:font-semibold mt-2">{name}</h2>
           <p className="text-sm hidden md:block">{description}</p>
         </div>
-        
       </div>
     </>
   )

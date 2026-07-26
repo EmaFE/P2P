@@ -22,7 +22,6 @@ const AuthLayout = ({children, image, altText}) =>{
           className='w-64 lg:w-[90%] absolute mx-auto shadow-lg shadow-black-400/15 rounded-lg'
           />
       </div>
-
     </div>
   )
 }

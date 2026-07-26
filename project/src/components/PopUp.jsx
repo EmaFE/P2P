@@ -1,5 +1,4 @@
 import React from 'react'
-import { Card, CardHeader } from './ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog"
 const PopUp = ({onClose, title, text, button1Text = null, button1Action = null, button2Text = null, button2Action = null, button3Text = null, button3Action = null}) =>{
   return (
@@ -44,8 +43,8 @@ const PopUp = ({onClose, title, text, button1Text = null, button1Action = null, 
         </DialogContent>
       </Dialog>
     </>
-  
-  );
+
+  )
 }
 
 export default PopUp

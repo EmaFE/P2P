@@ -18,7 +18,7 @@ const NavBar = () =>{
     try {
       await signOut(auth)
     } catch (error) {
-      console.error(error)
+      toast.error("Error logging out. Please try again.")
     }
     navigate("/login")
   }

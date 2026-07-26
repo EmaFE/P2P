@@ -1,17 +1,15 @@
-import React, { use } from 'react'
+import React from 'react'
 import AuthLayout from './AuthLayout'
 import generateRandomUsername from 'generate-random-username'
 import Input from './Input'
 import { Link, useNavigate } from 'react-router-dom'
-import { validateEmail, checkPassword } from '../../util/helper'
-import logImage from '../../assets/images/logIn.jpg'
+import { validateEmail } from '../../util/helper'
 
 import { auth, db } from "../../config/firebase"
-import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup, signOut, signInWithRedirect } from 'firebase/auth'
-import {doc, getDoc, setDoc, serverTimestamp} from 'firebase/firestore'
+import { signInWithEmailAndPassword, GoogleAuthProvider,  signInWithPopup, signOut } from 'firebase/auth'
+import {doc, setDoc, serverTimestamp} from 'firebase/firestore'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { getUserByEmail } from '../../config/firebase'
 import PopUp from '@/components/PopUp'
 import CommunityRules from '@/components/CommunityRules'
@@ -49,18 +47,17 @@ const LogIn = () =>{
       return;
     }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      const userDB = await getUserByEmail(email);
+      await signInWithEmailAndPassword(auth, email, password)
+      const userDB = await getUserByEmail(email)
 
       if (userDB.status === "banned") {
-        // console.log("banned from log in")
-        setBanOpen(true);
-        await signOut(auth);
-        return;
+        setBanOpen(true)
+        await signOut(auth)
+        return
       }
 
       if (userDB.status === "suspended") {
-        setSusOpen(true);
+        setSusOpen(true)
       }
 
       if (userDB.role && userDB.role === "admin"){
@@ -86,26 +83,26 @@ const LogIn = () =>{
     event.preventDefault()
     if (!termsAccepted){
       setError("Please accept the terms and conditions when logging in with Google. ")
-      return
+      return;
     }
     if (!communityRulesAccepted){
       setError("Please accept the community rules when logging in with Google.")
-      return
+      return;
     }
     try{
       if (error) {
         setError('')
       }
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
       const email = result.user.email
       //check if user already exists in users db
-      const userDoc = await getUserByEmail(email);
-      const user = result.user;
+      const userDoc = await getUserByEmail(email)
+      const user = result.user
 
       if (!userDoc) {
         //first time => generate username and create document
-        const randomUsername = generateRandomUsername();
+        const randomUsername = generateRandomUsername()
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           email: user.email,
@@ -115,10 +112,9 @@ const LogIn = () =>{
           role: "user",
           reportCount: 0,
           suspendCount: 0,
-        });
+        })
       } else {
           if(userDoc.status === "suspended"){
-            // console.log("suspended from sign in with google")
             setSusOpen(true)
           }
           if(userDoc.status === "banned"){
@@ -136,7 +132,6 @@ const LogIn = () =>{
           }
       }
     } catch(error){
-        // console.log("Error signing in with Google:",error);
         toast.error("Signing in with Google did not work. Try again later.")
       }
   }

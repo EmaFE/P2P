@@ -14,7 +14,7 @@ import { signOut } from 'firebase/auth'
 
 export default function Admin() {
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate()
   const logOut = async () =>{
     try {
       await signOut(auth)

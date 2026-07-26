@@ -38,7 +38,7 @@ const rules = [
     icon: MessageCircleMore,
     colors: "bg-green-50 text-green-700",
     title: "Use content warnings thoughtfully",
-    body: "Add a warning if your post covers sensitive topics like grief, trauma, or mental health crises.",
+    body: "Add a warning if your post covers sensitive topics like trauma or mental health crises.",
   },
   {
     icon: ThumbsUp,
@@ -46,7 +46,7 @@ const rules = [
     title: "Stay honest and authentic",
     body: "Don't impersonate others or spread misinformation. Authentic voices are what make peer support meaningful.",
   },
-];
+]
 
 export default function CommunityRules({ open, onOpenChange }) {
   return (
@@ -57,7 +57,7 @@ export default function CommunityRules({ open, onOpenChange }) {
         <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
 
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <p className="text-xs font-medium uppercase text-muted-foreground mb-1">
+            <p className="text-sm font-medium uppercase text-muted-foreground mb-1">
               Community Rules
             </p>
             <DialogTitle className="text-xl font-semibold">
@@ -93,6 +93,5 @@ export default function CommunityRules({ open, onOpenChange }) {
         </DialogContent>
       </Dialog>
     </>
-   
-  );
+  )
 }

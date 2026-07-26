@@ -1,6 +1,6 @@
 import React, { use } from 'react'
 import { Link } from 'react-router-dom'
-import { generateUsername } from 'unique-username-generator'
+import generateUsername from 'generate-random-username'
 import AuthLayout from "./AuthLayout"
 import Input from "./Input"
 import { validateEmail, checkPassword } from '../../util/helper'
@@ -48,13 +48,16 @@ const SignUp = () =>{
   
      if (!termsAccepted) {
       setError("Please accept the terms and conditions to sign up.")
+      return;
     }
     if (!communityRulesAccepted){
       setError("Please accept the community rules to sign up.")
+      return;
     } 
         
     if (error) {
       setError('')
+      return;
     } 
 
     if(!validateEmail(email)){
@@ -88,10 +91,7 @@ const SignUp = () =>{
     }
 
     try{
-        // console.log("entered if")
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        // console.log("user credential: ", userCredential)
-        // console.log("user credential uid: ", userCredential.user.uid)
         await setDoc(doc(db, "users", userCredential.user.uid), {
           uid: userCredential.user.uid,
           username: username,
@@ -106,13 +106,11 @@ const SignUp = () =>{
         await sendEmailVerification(userCredential.user)
 
         setShowEmailPopUp(true)
-        //  navigate("/")
      
     } catch(error){
       console.error(error)
       toast.error("Signing up did not work or user already exists.")
     }
-    
     
   }
 
@@ -130,16 +128,16 @@ const SignUp = () =>{
       if (error) {
         setError('')
       }
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
       const email = result.user.email
       //check if user already exists in users db
-      const userDoc = await getUserByEmail(email);
-      const user = result.user;
+      const userDoc = await getUserByEmail(email)
+      const user = result.user
 
       if (!userDoc) {
         //first time => generate username and create document
-        const randomUsername = await generateUniqueUsername();
+        const randomUsername = await generateUniqueUsername()
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           email: user.email,
@@ -149,10 +147,9 @@ const SignUp = () =>{
           role: "user",
           reportCount: 0,
           suspendCount: 0,
-        });
+        })
       } else{
          if(userDoc.status === "suspended"){
-            // console.log("suspended from sign in with google")
             setSusOpen(true)
           }
           if(userDoc.status === "banned"){
@@ -170,7 +167,6 @@ const SignUp = () =>{
           }
       }
     } catch(error){
-        // console.log("Error signing in with Google:",error);
         toast.error("Signing in with Google did not work. Try again later.")
       } 
       
@@ -178,14 +174,13 @@ const SignUp = () =>{
 
   const generateUniqueUsername = async () => {
     while (true) {
-    const username = generateUsername("-", 2);
+      const username = generateUsername("-")
+      const usernameDoc = await getDoc(doc(db, "usernames", username))
 
-    const usernameDoc = await getDoc(doc(db, "usernames", username));
-
-    if (!usernameDoc.exists()) {
-      return username;
+      if (!usernameDoc.exists()) {
+        return username;
+      }
     }
-  }
   }
 
   const handleEnter = (e, nextRef) =>{
@@ -239,7 +234,6 @@ const SignUp = () =>{
         navigate("/signup")
       }
     } catch (error) {
-      console.error("Error cancelling registration:", error);
       toast.error("Failed to cancel registration. Please try again later.")
     }
   }
@@ -263,7 +257,7 @@ const SignUp = () =>{
                     placeholder="generate username"
                     type='text'
                     readOnly
-                    className='outline-none'
+                    className='outline-none wrap'
                   />
                 </div>
 

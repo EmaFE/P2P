@@ -6,6 +6,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { getRelativeTime } from "@/lib/relative-time";
 import { fetchLogs } from "@/config/firebase";
 import { Context } from "@/util/authContext";
+import { cn } from "@/lib/utils";
 
 export default function AdminAudit(){
 
@@ -17,26 +18,27 @@ export default function AdminAudit(){
 
    React.useEffect(() =>{
     const fetchLogsF = async () =>{
-      const fetchedLogs = await fetchLogs();
+      const fetchedLogs = await fetchLogs()
       setLogs(fetchedLogs)
-      // console.log("Fetched logs: ", fetchedLogs)
     }
-    fetchLogsF();
-  }, [logs.length]); //fetch all logs, can be optimsied later if needed
+    fetchLogsF()
+  }, [logs.length]) //fetch all logs
 
   const filteredLogs= logs.filter((log) =>{
     const matchesSearch = log.admin_username.toLowerCase().includes(search.toLowerCase()) || log.admin_id.toLowerCase().includes(search.toLowerCase()) || log.impacted_user_id.toLowerCase().includes(search.toLowerCase()) || log.impacted_username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(log.createdAt).toLowerCase().includes(search.toLowerCase()) || log.og_content_id?.includes(search)
-    if (filter === "All") return matchesSearch;
-    if (filter === "Deleted Post") return matchesSearch && log.action === "deleted_post";
-    if (filter === "Deleted Comment") return matchesSearch && log.action === "deleted_comment";
-    if (filter === "Deleted Report") return matchesSearch && log.action === "deleted_report";
-    if (filter === "Restored Post") return matchesSearch && log.action === "restored_post";
-    if (filter === "Restored Comment") return matchesSearch && log.action === "restored_comment";
-    if (filter === "Dismissed Report") return matchesSearch && log.action === "dismissed_report";
-    if (filter === "Banned User") return matchesSearch && log.action === "banned_user";
-    if (filter === "Suspended User") return matchesSearch && log.action === "suspended_user";
-    return matchesSearch;
+    if (filter === "All") return matchesSearch
+    if (filter === "Deleted Post") return matchesSearch && log.action === "deleted_post"
+    if (filter === "Deleted Comment") return matchesSearch && log.action === "deleted_comment"
+    if (filter === "Deleted Report") return matchesSearch && log.action === "deleted_report"
+    if (filter === "Restored Post") return matchesSearch && log.action === "restored_post"
+    if (filter === "Restored Comment") return matchesSearch && log.action === "restored_comment"
+    if (filter === "Dismissed Report") return matchesSearch && log.action === "dismissed_report"
+    if (filter === "Banned User") return matchesSearch && log.action === "banned_user"
+    if (filter === "Suspended User") return matchesSearch && log.action === "suspended_user"
+    return matchesSearch
   })
+
+  const filters = ["All", "Deleted Post", "Deleted Comment", "Deleted Report", "Restored Post", "Restored Comment", "Dismissed Report", "Banned User", "Suspended User"]
 
  return (
     <div className="space-y-4">
@@ -46,10 +48,10 @@ export default function AdminAudit(){
           <Input placeholder="Search posts..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
         </div>
         <div>
-          {["All", "Deleted Post", "Deleted Comment", "Deleted Report", "Restored Post", "Restored Comment", "Dismissed Report", "Banned User", "Suspended User"].map((status) =>{
+          {filters.map((f) =>{
             return (
-              <Button key={status} variant={filter === status ? "default" : "outline"} size="sm" onClick ={() => setFilter(status)}>
-                {status}
+              <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick ={() => setFilter(f)}>
+                {f}
               </Button>
             )
           })}
@@ -71,23 +73,23 @@ export default function AdminAudit(){
             {filteredLogs.map((log) =>{
               return(
                 <TableRow key={log.id} className={(log.action === "deleted_post" || log.action === "deleted_comment" || log.action === "deleted_report") ? "bg-red-50" : ""}>
-                  <TableCell className="text-sm">@{log.admin_username}</TableCell>
-                  <TableCell className="text-sm">{log.action}</TableCell>
-                  <TableCell className="text-sm max-w-sm">
-                    <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
+                  <TableCell>@{log.admin_username}</TableCell>
+                  <TableCell>{log.action}</TableCell>
+                  <TableCell className="max-w-sm">
+                    <p className="text-card-foreground w-full whitespace-pre-wrap break-words">
                       {!expanded[log.id] && log.reason?.length > 10 ? log.reason.slice(0,10) + "..." : log.reason ? log.reason : " - "}
                         {log.reason?.length > 10 && (
                           <button
                             onClick={() => setExpanded((prev) => ({ ...prev, [log.id] : !prev[log.id] }))}
-                            className="ml-1 text-sm font-medium text-primary hover:underline"
+                            className={cn("ml-1 font-medium text-primary hover:underline", expanded[log.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                           >
                             {expanded[log.id] ? "Show less" : "Read more"}
                           </button>
                         )}
                     </p>
                   </TableCell>
-                   <TableCell className="text-sm">{log.og_content_id ? log.og_content_id : "-"}</TableCell>
-                  <TableCell className="text-sm">{getRelativeTime(log.createdAt)}</TableCell>
+                   <TableCell>{log.og_content_id ? log.og_content_id : "-"}</TableCell>
+                  <TableCell>{getRelativeTime(log.createdAt)}</TableCell>
                   <TableCell>{log.impacted_username}</TableCell>
              </TableRow>
               )

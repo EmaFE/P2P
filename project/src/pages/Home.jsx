@@ -21,19 +21,19 @@ const Home = () =>{
 
    const useIsVisible = (ref) => {
     
-    const [isIntersecting, setIntersecting] = React.useState(false);
+    const [isIntersecting, setIntersecting] = React.useState(false)
   
     React.useEffect(() => {
-      if (!ref.current) return;
+      if (!ref.current) return
       const observer = new IntersectionObserver(([entry]) => {
         setIntersecting(entry.isIntersecting)
-      });
+      })
       
-      observer.observe(ref.current);
+      observer.observe(ref.current)
       return () => {
-        observer.disconnect();
-      };
-    }, [ref]);
+        observer.disconnect()
+      }
+    }, [ref])
   
     return isIntersecting;
   }

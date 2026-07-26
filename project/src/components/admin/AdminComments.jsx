@@ -8,6 +8,7 @@ import ReasonDeleteDialog from "./ReasonDeleteDialog";
 import { deleteContent, fetchAllComments, dismiss } from "@/config/firebase";
 import { Badge } from "../ui/badge";
 import { Context } from "@/util/authContext";
+import { cn } from "@/lib/utils";
 
 export default function AdminComments(){
 
@@ -15,51 +16,48 @@ export default function AdminComments(){
   const [comments, setComments] = React.useState([])
   const [search, setSearch] = React.useState("")
   const [filter, setFilter] = React.useState("All")
-  const [expanded, setExpanded] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [refresh, setRefresh] = React.useState(0)
 
   React.useEffect(() =>{
       const fetchCommentsF = async () =>{
-        const fetchedComments = await fetchAllComments();
+        const fetchedComments = await fetchAllComments()
         setComments(fetchedComments)
-        // console.log("Fetched comments: ", fetchedComments)
       }
-      fetchCommentsF();
-    }, [refresh]); //fetch all comments, can be optimsied later if needed
+      fetchCommentsF()
+    }, [refresh]) //fetch all comments
 
   const filteredComments = comments.filter((comment) =>{
     const matchesSearch = comment.content.toLowerCase().includes(search.toLowerCase()) || comment.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(comment.createdAt).toLowerCase().includes(search.toLowerCase()) 
-    if (filter === "All") return matchesSearch;
-    if (filter === "Active") return matchesSearch && comment.status === "active";
-    if (filter === "Deleted") return matchesSearch && comment.status === "deleted";
-    if (filter === "Reported") return matchesSearch && comment.status === "reported";
-    return matchesSearch;
+    if (filter === "All") return matchesSearch
+    if (filter === "Active") return matchesSearch && comment.status === "active"
+    if (filter === "Deleted") return matchesSearch && comment.status === "deleted"
+    if (filter === "Reported") return matchesSearch && comment.status === "reported"
+    return matchesSearch
   })
 
    const handleDeleteComment = async (reason) => {
-    // console.log("com id: ", user.uid)
     await deleteContent(deleteDialogOpen.comment.id, reason, "comments", "deleted", user.uid)
     setComments((prev) => prev.filter((comment) => comment.id !== deleteDialogOpen.id))
     setRefresh((prev) => prev + 1)
     if (refresh === 10){
       setRefresh(0)
     }
-  };
+  }
 
   const handleRestore = async (id) => {
-    await dismiss(id, "comments", user.uid);
+    await dismiss(id, "comments", user.uid)
     setComments((prev) => prev.filter((comment) => comment.id !== id))
     setRefresh((prev) => prev + 1)
     if (refresh === 10){
       setRefresh(0)
     }
-  };
+  }
 
 
   return (
     <div className="space-y-4">
-
       <div className="flex items-center justify-between">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/4 h-4 w-4 text-muted-foreground" />
@@ -79,7 +77,6 @@ export default function AdminComments(){
       <div>
         <Table>
           <TableHeader>
-            {/* <TableHead>Title</TableHead> */}
             <TableHead>Content</TableHead>
             <TableHead>Author</TableHead>
             <TableHead>Date</TableHead>
@@ -91,32 +88,27 @@ export default function AdminComments(){
             {filteredComments.map((comment) =>{
               return(
                 <TableRow key={comment.id} className={comment.status === "reported" ? "bg-orange-50" : comment.status === "deleted" ? "bg-red-50 opacity-60" : ""}>
-                  {/* <TableCell>
-                    <div className="truncate font-medium">{comment.title}</div>
-                      {comment.deletionReason && <div className="text-xs text-destructive mt-0.5">Reason: {comment.deletionReason}</div>}
-                  </TableCell> */}
-
 
                   <TableCell className="max-w-sm">
-                     <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-                      {!expanded && comment.content.length > 30 ? comment.content.slice(0,30) + "..." : comment.content}
+                     <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
+                      {!expanded[comment.id] && comment.content.length > 30 ? comment.content.slice(0,30) + "..." : comment.content}
                       {comment.content.length > 30 && (
                         <button
-                          onClick={() => setExpanded((prev) => !prev)}
-                          className="ml-1 text-sm font-medium text-primary hover:underline"
+                          onClick={() => setExpanded((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }))}
+                          className={cn("ml-1 text-sm font-medium text-primary hover:underline", expanded[comment.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                         >
-                          {expanded ? "Show less" : "Read more"}
+                          {expanded[comment.id] ? "Show less" : "Read more"}
                         </button>
                       )}
                     </p>
-                    <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-                      {!expanded && comment.deletionReason?.length > 10 ? `Reason: ${comment.deletionReason.slice(0,10)}` + "..." : comment.deletionReason !== "" ? `Reason: ${comment.deletionReason}` : ""}
+                    <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
+                      {!expanded[comment.id] && comment.deletionReason?.length > 10 ? `Reason: ${comment.deletionReason.slice(0,10)}` + "..." : comment.deletionReason !== "" ? `Reason: ${comment.deletionReason}` : ""}
                         {comment.deletionReason?.length > 10 && (
                           <button
-                            onClick={() => setExpanded((prev) => !prev)}
-                            className="ml-1 text-sm font-medium text-primary hover:underline"
+                            onClick={() => setExpanded((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }))}
+                            className={cn("ml-1 text-sm font-medium text-primary hover:underline", expanded[comment.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                           >
-                            {expanded ? "Show less" : "Read more"}
+                            {expanded[comment.id] ? "Show less" : "Read more"}
                           </button>
                         )}
                     </p>
@@ -141,7 +133,7 @@ export default function AdminComments(){
                         <Button className="hover:cursor-pointer" variant="outline" size="sm" onClick={() => handleRestore(comment.id)}>
                           <RotateCcw className="h-3 w-3 mr-1"/> Restore
                         </Button>) : (
-                          <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen({comment : comment})}>
+                          <Button className="hover:cursor-pointer" variant="outline" size="sm" onClick={() => setDeleteDialogOpen({comment : comment})}>
                           <Trash2 className="h-3 w-3 mr-1"/> Delete
                         </Button>
                         )

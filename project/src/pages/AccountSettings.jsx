@@ -14,8 +14,6 @@ import { useAuth } from "@/util/authContext";
 
 function UpdateEmail({ user, userDB, isGoogleUser }) {
 
-  // console.log("userdb: ", userDB)
-
   const [open, setOpen] = useState(false)
   const [currentEmail, setCurrentEmail] = useState("")
   const [verifiedEmail, setVerifiedEmail] = useState(false)
@@ -29,26 +27,17 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
     if (currentEmail.trim().toLowerCase() === user.email?.toLowerCase()) {
       setVerifiedEmail(true)
     }
-      //     const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
-      // console.log("credential: ", credential)
-      // console.log("curr password: ", currentPassword.trim())
-      // console.log("credential password: ", credential?._password)
-  };
+  }
 
   const reauthenticate = async () => {
     if(!currentPassword.trim()) return
     setloadingInput(true)
     try{
       const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
-      // console.log("credential: ", credential)
-      // console.log("curr password: ", currentPassword.trim())
-      // console.log("credential password: ", credential?._password)
       await reauthenticateWithCredential(user, credential)
       setVerifiedPassword(true)
-      // console.log("reauth")
     } catch(error){
       toast.error("Incorrect Password")
-      // console.log(error)
     } finally {
       setloadingInput(false)
     }
@@ -62,20 +51,19 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
       await verifyBeforeUpdateEmail(user, newEmail.trim())
       const userRef = doc(db, "users", user.uid)
       await updateDoc(userRef, { email: newEmail.trim() })
-      toast.success("Email updated!")
+      toast.success("Please verify the email address using the link sent to your inbox!")
       setOpen(false)
-      setVerifiedEmail(false);
+      setVerifiedEmail(false)
       setVerifiedPassword(false)
       setCurrentPassword("")
       setCurrentEmail("")
       setNewEmail("")
     } catch (error) {
-      // console.log("error updating email: ", error)
       toast.error("Could not update email")
     } finally {
       setloadingInput(false)
     }
-  };
+  }
 
   //everytime the colappsable element reopens, these inputs will be empty
   const checkNewVal = (newVal) =>{
@@ -84,9 +72,8 @@ function UpdateEmail({ user, userDB, isGoogleUser }) {
       setCurrentEmail("")
       setNewEmail("")
     }
-  };
+  }
 
-  // console.log("userDB from account settings: ", userDB)
 
   return (
     <Collapsible open={open} onOpenChange={(newVal) => { setOpen(newVal);  checkNewVal(newVal);}}>
@@ -165,14 +152,12 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
 
   const reauthenticate = async () => {
     if(!currentPassword.trim()) return;
-    setloadingInput(true);
+    setloadingInput(true)
     try{
       const credential = EmailAuthProvider.credential(user.email, currentPassword.trim())
       await reauthenticateWithCredential(user, credential)
       setVerifiedPassword(true)
-      // console.log("reauth")
     } catch(error){
-      // console.log(error)
       toast.error("Incorrect Password")
     } finally {
       setloadingInput(false)
@@ -181,17 +166,17 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
 
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
+      toast.error("Passwords don't match")
+      return
     }
     if (newPassword.length < 8) {
-      toast.message("Password too short", {description: "Must be at least 8 characters." });
-      return;
+      toast.message("Password too short", {description: "Must be at least 8 characters." })
+      return
     }
-    setloadingInput(true);
+    setloadingInput(true)
     
     try{
-      await updatePassword(getAuth().currentUser, newPassword);
+      await updatePassword(getAuth().currentUser, newPassword)
       toast.success("Password updated!")
       setOpen(false)
       setVerifiedPassword(false)
@@ -203,7 +188,7 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
     } finally {
       setloadingInput(false)
     }
-  };
+  }
 
   //everytime the colappsable element reopens, these inputs will be empty
   const checkNewVal = (newVal) =>{
@@ -272,30 +257,24 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
   )}
 
   export default function AccountSettings() {
-    // console.log("user from account settings USER: ", user)
 
-    const { user } = useAuth();
-    // console.log("user from account settings USER: ", user)
+    const { user } = useAuth()
     const [userDB, setUserDB] = useState(null)
     const [open, setOpen] = useState(false)
 
     const isGoogleUser = user?.providerData[0]?.providerId === "google.com"
 
     React.useEffect( () =>{
-      // console.log("lakjblcabcj")
       if (!user) return;
       const fetchUser = async () =>{
-        // console.log("BEFORE GET USER BY ID")
-        const userdb = await getUserById(user.uid);
-        // console.log("userdb: from effect: ", userdb)
-        setUserDB(userdb);
+        const userdb = await getUserById(user.uid)
+        setUserDB(userdb)
         if (userdb.status !== "active") setOpen(true)
         if (isGoogleUser) setOpen(true)
       }
       fetchUser()
-    }, [user.uid]);
+    }, [user.uid])
 
-    // console.log("status ", userDB?.status === "active",  "isGoogleUser ", isGoogleUser, "open ", open )
 
   return (
     <div className="space-y-3">
@@ -303,7 +282,6 @@ function ChangePassword({ user, userDB, isGoogleUser }) {
       {userDB?.status === "active" && isGoogleUser && open && <PopUp onClose={() => setOpen(false)} title="Google User" text="You signed up with a Google account. If you wish to change your email address of password, you may do so from you Google account." /> }
       {userDB && <UpdateEmail user={user} userDB={userDB} isGoogleUser={isGoogleUser}/> }
       {userDB && <ChangePassword user={user} userDB={userDB} isGoogleUser={isGoogleUser}/> }
-
     </div>
-  );
+  )
 }

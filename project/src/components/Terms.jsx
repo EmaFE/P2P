@@ -67,7 +67,7 @@ const sections = [
     title: "Changes to these terms",
     body: "We may update these terms from time to time. If changes are significant, we will notify you via email or an in-app notice. Continued use after notification constitutes acceptance.",
   },
-];
+]
 
 export default function TermsAndConditions({ open, onOpenChange }) {
   return (
@@ -96,7 +96,7 @@ export default function TermsAndConditions({ open, onOpenChange }) {
                 <li key={section.number} className="flex gap-3 py-4">
                   <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${section.colors}`}
                   >
-                    <section.icon size={15} aria-hidden="true" />
+                    <section.icon size={15}/>
                   </span>
                   <div>
                     <p className="text-sm font-medium">
@@ -119,5 +119,5 @@ export default function TermsAndConditions({ open, onOpenChange }) {
       
     </>
    
-  );
+  )
 }

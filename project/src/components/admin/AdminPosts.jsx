@@ -3,13 +3,12 @@ import { RotateCcw, Search, Trash2} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import Post from "../Post";
 import { getRelativeTime } from "@/lib/relative-time";
 import ReasonDeleteDialog from "./ReasonDeleteDialog";
 import { deleteContent, fetchPosts, dismiss } from "@/config/firebase";
 import { Badge } from "../ui/badge";
 import { Context } from "@/util/authContext";
-import { auth } from "@/config/firebase";
+import { cn } from "@/lib/utils";
 
 export default function AdminPosts(){
 
@@ -17,31 +16,28 @@ export default function AdminPosts(){
   const [posts, setPosts] = React.useState([])
   const [search, setSearch] = React.useState("")
   const [filter, setFilter] = React.useState("All")
-  const [expanded, setExpanded] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [refresh, setRefresh] = React.useState(0)
 
   React.useEffect(() =>{
       const fetchPostsF = async () =>{
-        const fetchedPosts = await fetchPosts("general", user);
+        const fetchedPosts = await fetchPosts("general", user)
         setPosts(fetchedPosts)
-        // console.log("Fetched reports: ", fetchedPosts)
       }
-      fetchPostsF();
-    }, [refresh]); //fetch all posts, can be optimsied later if needed
+      fetchPostsF()
+    }, [refresh]) //fetch all posts, can be optimsied later if needed
 
   const filteredPosts = posts.filter((post) =>{
     const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) || post.content.toLowerCase().includes(search.toLowerCase()) || post.username.toLowerCase().includes(search.toLowerCase()) || getRelativeTime(post.createdAt).toLowerCase().includes(search.toLowerCase()) 
-    if (filter === "All") return matchesSearch;
-    if (filter === "Active") return matchesSearch && post.status === "active";
-    if (filter === "Deleted") return matchesSearch && post.status === "deleted";
-    if (filter === "Reported") return matchesSearch && post.status === "reported";
+    if (filter === "All") return matchesSearch
+    if (filter === "Active") return matchesSearch && post.status === "active"
+    if (filter === "Deleted") return matchesSearch && post.status === "deleted"
+    if (filter === "Reported") return matchesSearch && post.status === "reported"
     return matchesSearch;
   })
 
    const handleDeletePost = async (reason) => {
-    // console.log(user.uid)
-    // console.log("Auth UID:", auth.currentUser?.uid);
     await deleteContent(deleteDialogOpen.post.id, reason, "posts","deleted", user.uid)
     setPosts((prev) => prev.filter((post) => post.id !== deleteDialogOpen.id))
     setRefresh((prev) => prev + 1)
@@ -51,9 +47,8 @@ export default function AdminPosts(){
   }
 
   const handleRestore = async (id) => {
-    await dismiss(id, "posts", user.uid);
+    await dismiss(id, "posts", user.uid)
     setPosts((prev) => prev.filter((post) => post.id !== id))
-    // console.log("Restore post with id: ", id)
     setRefresh((prev) => prev + 1)
     if (refresh === 10){
       setRefresh(0)
@@ -63,7 +58,6 @@ export default function AdminPosts(){
 
   return (
     <div className="space-y-4">
-
       <div className="flex items-center justify-between">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/4 h-4 w-4 text-muted-foreground" />
@@ -96,15 +90,15 @@ export default function AdminPosts(){
               return(
                 <TableRow key={post.id} className={post.status === "reported" ? "bg-orange-50" : post.status === "deleted" ? "bg-red-50 opacity-60" : ""}>
                   <TableCell>
-                    <div className="truncate font-medium">{post.title}</div>
-                      <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-                        {!expanded && post.deletionReason?.length > 10 ? `Reason: ${post.deletionReason.slice(0,10)}` + "..." : post.deletionReason ? `Reason: ${post.deletionReason}` : ""}
+                    <div className=" font-medium">{post.title}</div>
+                      <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
+                        {!expanded[post.id] && post.deletionReason?.length > 10 ? `Reason: ${post.deletionReason.slice(0,10)}` + "..." : post.deletionReason ? `Reason: ${post.deletionReason}` : ""}
                           {post.deletionReason?.length > 10 && (
                             <button
-                              onClick={() => setExpanded((prev) => !prev)}
-                              className="ml-1 text-sm font-medium text-primary hover:underline"
+                              onClick={() => setExpanded((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                              className={cn("ml-1 text-sm font-medium text-primary hover:underline", expanded[post.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                             >
-                              {expanded ? "Show less" : "Read more"}
+                              {expanded[post.id] ? "Show less" : "Read more"}
                             </button>
                           )}
                       </p>
@@ -112,14 +106,14 @@ export default function AdminPosts(){
 
 
                   <TableCell className="max-w-sm">
-                     <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-                      {!expanded && post.content.length > 30 ? post.content.slice(0,30) + "..." : post.content}
+                     <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
+                      {!expanded[post.id] && post.content.length > 30 ? post.content.slice(0,30) + "..." : post.content}
                       {post.content.length > 30 && (
                         <button
-                          onClick={() => setExpanded((prev) => !prev)}
-                          className="ml-1 text-sm font-medium text-primary hover:underline"
+                          onClick={() => setExpanded((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                          className={cn("ml-1 text-sm font-medium text-primary hover:underline", expanded[post.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                         >
-                          {expanded ? "Show less" : "Read more"}
+                          {expanded[post.id] ? "Show less" : "Read more"}
                         </button>
                       )}
                     </p>

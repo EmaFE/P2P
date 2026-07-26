@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { getRelativeTime } from "@/lib/relative-time";
 import ReasonDeleteDialog from "./ReasonDeleteDialog";
-import { deleteContent, fetchUsers, dismiss, db } from "@/config/firebase";
+import { deleteContent, dismiss, db } from "@/config/firebase";
 import { Badge } from "../ui/badge";
 import { Context } from "@/util/authContext";
 import { collection, onSnapshot } from "firebase/firestore"
+import { cn } from "@/lib/utils";
 
 export default function AdminUsers(){
 
@@ -16,28 +17,26 @@ export default function AdminUsers(){
     const [users, setUsers] = React.useState([])
     const [search, setSearch] = React.useState("")
     const [filter, setFilter] = React.useState("All")
-    const [expanded, setExpanded] = React.useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [expanded, setExpanded] = React.useState(false)
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   
     React.useEffect(() => {
-      const usersRef = collection(db, "users");
-      
+      const usersRef = collection(db, "users")
       const unsubscribe = onSnapshot(usersRef, (snapshot) => {
-        const updatedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUsers(updatedUsers);
-      });
-
-      return () => unsubscribe(); //cleanup listener on unmount
-    }, []); //runs once, but listener staus active
+        const updatedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setUsers(updatedUsers)
+      })
+      return () => unsubscribe() //cleanup listener on unmount
+    }, []) //runs once, but listener staus active
   
     const filteredUsers= users.filter((user) =>{
       const matchesSearch = user.username.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase()) || user.uid.toLowerCase().includes(search.toLowerCase()) || user.createdAt.toLowerCase().includes(search.toLowerCase()) || user.reason.toLowerCase().includes(search.toLowerCase())
-      if (filter === "All") return matchesSearch;
-      if (filter === "Active") return matchesSearch && user.status === "active";
-      if (filter === "Suspended") return matchesSearch && user.status === "suspended";
-      if (filter === "Banned") return matchesSearch && user.status === "banned";
-      if (filter === "Report No.")  return matchesSearch && user.reportCount > 0;
-      return matchesSearch;
+      if (filter === "All") return matchesSearch
+      if (filter === "Active") return matchesSearch && user.status === "active"
+      if (filter === "Suspended") return matchesSearch && user.status === "suspended"
+      if (filter === "Banned") return matchesSearch && user.status === "banned"
+      if (filter === "Report No.")  return matchesSearch && user.reportCount > 0
+      return matchesSearch
     })
   
     const handleBanUser = async (reason) => {
@@ -51,9 +50,8 @@ export default function AdminUsers(){
     }
   
     const handleActivateUser = async (id) => {
-      await dismiss(id, "users", user.uid);
+      await dismiss(id, "users", user.uid)
       setUsers((prev) => prev.filter((user) => user.id !== id))
-      // console.log("Restore user with id: ", id)
     }
 
 
@@ -92,32 +90,31 @@ export default function AdminUsers(){
               return(
                 <TableRow key={user.id} className={user.status === "suspended" ? "bg-orange-50" : user.status === "banned" ? "bg-red-50 opacity-60" : ""}>
                   <TableCell className="max-w-sm">
-                    <div className="truncate font-medium">@{user.username}</div>
-                      <p className="text-sm text-card-foreground leading-relaxed w-full whitespace-pre-wrap break-words">
-                        {/* {user.deletionReason && <div className="text-xs text-destructive mt-0.5">Reason: {user.deletionReason}</div>} */}
+                    <div className=" font-medium">@{user.username}</div>
+                      <p className="text-sm text-card-foreground w-full whitespace-pre-wrap break-words">
                         {!expanded && user.deletionReason?.length > 10 ? `Reason: ${user.deletionReason.slice(0,10)}` + "..." : user.deletionReason ? `Reason: ${user.deletionReason}` : ""}
                         {user.deletionReason?.length > 10 && (
                           <button
-                            onClick={() => setExpanded((prev) => !prev)}
-                            className="ml-1 text-sm font-medium text-primary hover:underline"
+                            onClick={() => setExpanded((prev) => ({ ...prev, [user.id]: !prev[user.id] }))}
+                            className={cn("ml-1 text-sm font-medium text-primary hover:underline", expanded[user.id] ? "text-[var(--color-six)]" : "text-pink-800")}
                           >
-                            {expanded ? "Show less" : "Read more"}
+                            {expanded[user.id] ? "Show less" : "Read more"}
                           </button>
                         )}
                       </p>
                   </TableCell>
 
 
-                  <TableCell className="text-sm">{user.email}</TableCell>
+                  <TableCell>{user.email}</TableCell>
 
-                  <TableCell className="text-sm">{getRelativeTime(user.createdAt)}</TableCell>
+                  <TableCell>{getRelativeTime(user.createdAt)}</TableCell>
 
-                  <TableCell className="text-sm text-center">{user.reportCount}</TableCell>
+                  <TableCell className="text-center">{user.reportCount}</TableCell>
 
                   <TableCell>
                     <div className="flex gap-1">
                       {user.status === "deleted" && <Badge variant="destructive">Deleted</Badge>}
-                      {user.status === "reported" && <Badge variant="secondary">Reported</Badge>}
+                      {user.status === "suspended" && <Badge variant="secondary">Suspended</Badge>}
                       {user.status === "active" && <Badge className="outline">Active</Badge>}
                     </div>
                   </TableCell>

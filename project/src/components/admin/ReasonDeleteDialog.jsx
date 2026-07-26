@@ -1,16 +1,13 @@
 
 import React from 'react'
 import { Textarea } from '../ui/textarea'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '../ui/dialog'
 import { Button } from '../ui/button'
-
 
 export default function ReasonDialog({ open, onOpenChange, title, description, confirmText, onConfirm}){
 
-  const [reason, setReason] = React.useState("");
-
+  const [reason, setReason] = React.useState("")
   const handleConfirm = () =>{
-    // console.log("Confirming with reason: ", reason)
     onConfirm(reason)
     setReason("")
     onOpenChange()

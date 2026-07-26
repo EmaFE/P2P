@@ -14,30 +14,29 @@ import { collection, getDocs, onSnapshot, query, addDoc, where, serverTimestamp}
 import { db, fetchPosts, createPost, auth, getUserById} from "../config/firebase";
 import PopUp from "@/components/PopUp";
 
-const CommunityPage = ({communityName, description, categories, filterOptions, sortOptions}) =>{
+const CommunityPage = ({communityName, description1, description2, description3, description4, categories, filterOptions, sortOptions}) =>{
 
-  const { user } = useAuth();
-  const [userDB, setUserDB] = useState(null);
-  const isMobile  = useIsMobile();
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
-  const [selectedFilters, setSelectedFilters] = useState([]);
-  const [selectedSort, setSelectedSort] = useState("Newest");
-  const [posts, setPosts] = useState([]);
-  const [isNewPost, setIsNewPost] = useState(false);
-  const [isUserPressed, setUserPressed] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth()
+  const [userDB, setUserDB] = useState(null)
+  const isMobile  = useIsMobile()
+  const [activeCategory, setActiveCategory] = useState(categories[0])
+  const [selectedFilters, setSelectedFilters] = useState([])
+  const [selectedSort, setSelectedSort] = useState("Newest")
+  const [posts, setPosts] = useState([])
+  const [isNewPost, setIsNewPost] = useState(false)
+  const [isUserPressed, setUserPressed] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   
   async function handleCreatePost(post) {
-    const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
-    const username = userDoc.docs[0]?.data()?.username;
+    const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)))
+    const username = userDoc.docs[0]?.data()?.username
     const uid = userDoc.docs[0]?.data()?.uid
     try{       
-      await createPost({ title: post.title, content: post.content, username: username, uid: uid, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() });
-      const newPosts = await fetchPosts(activeCategory, user);
-      setPosts(newPosts);
+      await createPost({ title: post.title, content: post.content, username: username, uid: uid, tags: post.tags, activeCategory: post.category.toLowerCase(), communityName: communityName.toLowerCase() })
+      const newPosts = await fetchPosts(activeCategory, user)
+      setPosts(newPosts)
     } catch (error) {
-      console.error("Error creating post:", error);
     }
     
   }
@@ -45,29 +44,28 @@ const CommunityPage = ({communityName, description, categories, filterOptions, s
 React.useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
     if (!user) return;
-    setLoading(true);
-    const posts = await fetchPosts(activeCategory, user);
-    const userdb = await getUserById(user.uid);
+    setLoading(true)
+    const posts = await fetchPosts(activeCategory, user)
+    const userdb = await getUserById(user.uid)
     setUserDB(userdb)
-    setPosts(posts);
-    setLoading(false);
-  });
+    setPosts(posts)
+    setLoading(false)
+  })
 
-  return () => unsubscribe();
-}, [activeCategory, user.uid]);
+  return () => unsubscribe()
+}, [activeCategory, user.uid, posts.length])
 
 
   const filteredPosts = () =>{  
     return posts.filter((post) => {
   
-      const communityMatch = post.community === communityName.toLowerCase();
-
+      const communityMatch = post.community === communityName.toLowerCase()
       const categoryMatch = post.category && post.category.toLowerCase() === activeCategory.toLowerCase()
 
        //block private posts (from reflections/drafts in anxiety) from other users
-      const isPrivate = post.category?.toLowerCase() === "drafts";
-      const isOwnPost = post.uid === user.uid;
-      if (isPrivate && !isOwnPost) return false;
+      const isPrivate = post.category?.toLowerCase() === "drafts"
+      const isOwnPost = post.uid === user.uid
+      if (isPrivate && !isOwnPost) return false
 
       //posts match if they have at least one of the selected filters as a tag. If no filters are selected, all posts should match
       const filterMatchPosts = 
@@ -76,7 +74,7 @@ React.useEffect(() => {
       
       const filterMatchUser = !isUserPressed || post.username.trim().toLowerCase() === isUserPressed.trim().toLowerCase()
 
-      return categoryMatch && filterMatchPosts && communityMatch && filterMatchUser;
+      return categoryMatch && filterMatchPosts && communityMatch && filterMatchUser
     })
   } 
 
@@ -97,9 +95,7 @@ React.useEffect(() => {
       }})
   }
 
-  const visiblePosts = sortedPosts();
-  // console.log("visible posts ", visiblePosts)
-  // console.log()
+  const visiblePosts = sortedPosts()
 
   const toggleFilter = (option) =>{
     setSelectedFilters((prev) =>{
@@ -120,10 +116,8 @@ React.useEffect(() => {
     setUserPressed(username);
   }
 
-  // console.log("active category from community page: ", activeCategory)
-
   return(
-    <div className="flex flex-1 top-0">
+    <div className="w-screen flex flex-1 top-0">
       <main className="flex flex-col flex-1">
         <header className="sticky top-0 z-1 bg-pink-800 border-b px-7 md:px-6 py-5 pt-7 bg-[var(--color-six)] '">
 
@@ -131,7 +125,12 @@ React.useEffect(() => {
             <h1 className="text-2xl md:text-2xl text-white font-bold text-foreground mb-3">
               {communityName}
             </h1>
-            <p className="text-white mt-1">{description}</p>
+            {!isMobile && description1 && <p className="text-white mt-1">{description1}</p>}
+            {/* <br /> */}
+            {!isMobile && description2 && <p className="text-white mt-1">{description2}</p>}
+            {isMobile && communityName === "University Students" && description1 && <p className="text-white mt-1">{description1}</p>}
+            {isMobile && description3 && <p className="text-white mt-1">{description3}</p>}
+            {isMobile && description4 && <p className="text-white mt-1">{description4}</p>}
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -162,7 +161,7 @@ React.useEffect(() => {
                       <SheetContent side="right" className="w-72 p-0">
                         <div className="p-4 space-y-6 pt-10">
                           <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wide text-pink-800 mb-3">
+                            <h3 className="text-sm font-bold uppercase text-pink-800 mb-3">
                               Filter by
                             </h3>
                             <ScrollArea className="h-40">
@@ -183,7 +182,7 @@ React.useEffect(() => {
                           </div>
 
                           <div>
-                            <h3 className="text-sm font-bold uppercase tracking-wide text-pink-800 mb-3">
+                            <h3 className="text-sm font-bold uppercase text-pink-800 mb-3">
                               Sort by
                             </h3>
                             <ScrollArea className="h-40">
@@ -263,7 +262,7 @@ React.useEffect(() => {
               }
             </div>
           </ScrollArea>
-          {/*right fixed sidebar - desktop only */}
+          {/*right fixed sidebar; desktop only */}
           {!isMobile && 
             <FilterSortSideBar
               filterOptions={filterOptions}
@@ -277,8 +276,6 @@ React.useEffect(() => {
         </div>
       </main>
 
-
-      
       {isNewPost && userDB?.status !== "active" && <PopUp onClose={() => setIsNewPost(false)} title="Account Suspended" text="Your account is currently suspended. You cannot create posts at this time." />}   
 
       {userDB?.status === "active" && 

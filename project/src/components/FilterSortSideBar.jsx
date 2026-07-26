@@ -8,7 +8,7 @@ const FilterSortSideBar = ({ filterOptions, sortOptions, selectedFilters, select
     <aside className='bg-pink-800 sticky top-72 h-[450px] w-64 border flex-shrink-0 rounded-lg md:mr-25 lg:mr-45 p-4 hidden md:block lg:block'>
       <div className='space-y-6'>
         <div>
-          <h3 className='text-white text-sm font-bold uppercase tracking-wide mb-3'>
+          <h3 className='text-white text-sm font-bold uppercase mb-3'>
             Filter by
           </h3>
           <ScrollArea className="h-40">
@@ -29,7 +29,7 @@ const FilterSortSideBar = ({ filterOptions, sortOptions, selectedFilters, select
         </div>
 
         <div>
-          <h3 className='text-sm font-bold uppercase tracking-wide mb-3 text-white'>
+          <h3 className='text-sm font-bold uppercase mb-3 text-white'>
             Sort by
           </h3>
           <ScrollArea className="h-40">

@@ -10,18 +10,16 @@ import NavSideBar from "../components/NavSideBar";
 import image from "@/assets/images/bg_msg_clean.svg"
 export default function Account () {
 
-  const { user } = React.useContext(Context);
-  const [username, setUsername] = React.useState("");
-
-  // console.log("user from account: ", user)
+  const { user } = React.useContext(Context)
+  const [username, setUsername] = React.useState("")
 
   React.useEffect(() => {
     const fetchUsername = async () => {
-      const user = await getUser();
-      setUsername(user?.username);
-    };
-    fetchUsername();
-  }, []);
+      const user = await getUser()
+      setUsername(user?.username)
+    }
+    fetchUsername()
+  }, [])
   
   return ( 
   <div className="min-h-screen flex">

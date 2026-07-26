@@ -3,7 +3,7 @@ import NavSideBar from "../../components/NavSideBar";
 import CommunityPage from "../CommunityPage";
 import image from "@/assets/images/bg_msg_clean.svg"
 
-const CommunityLayout = ({name, description, categories, filterOptions, sortOptions}) =>{
+const CommunityLayout = ({name, description1, description2, description3, description4, categories, filterOptions, sortOptions}) =>{
 
   return(
     <div className="flex">
@@ -14,7 +14,10 @@ const CommunityLayout = ({name, description, categories, filterOptions, sortOpti
       <NavSideBar/>
       <CommunityPage
         communityName={name}
-        description={description}
+        description1={description1}
+        description2={description2}
+        description3={description3}
+        description4={description4}
         categories={categories}
         filterOptions={filterOptions}
         sortOptions={sortOptions}
