@@ -13,21 +13,20 @@ A community and support platform built with React and Firebase.
 - npm v9+
 - A Firebase project
 
-------------------------------------------
 
-## Getting Started
+## Setup
 
-### 1. Clone the repo
+## 1. Clone the repo
 
-### 2. Install dependencies
+## 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Set up environment variables
+## 3. Set up environment variables
 
-Create a `.env` file in the root with the following (never commit this file):
+Create a `.env` file in the root with the following (do not commit this file):
 
 ```env
 VITE_FIREBASE_API_KEY=
@@ -40,7 +39,7 @@ VITE_FIREBASE_APP_ID=
 
 You can find all of these in your Firebase project settings under **Settings -> General -> Your apps**
 
-### 4. Run locally
+## 4. Run locally
 
 ```bash
 npm run dev
@@ -48,26 +47,22 @@ npm run dev
 App runs at `http://localhost:5173`.
 
 
-------------------------------------------
-
 ## Firebase Setup
 
-### Authentication
+## Authentication
 
 In the Firebase Console, go to **Authentication -> Sign-in method** and enable:
 
 - Email/Password
 - Google
 
-### Firestore
+## Firestore
 
 Go to **Firestore Database** and create a database. Make sure your security rules are configured.
 
-### Admin Access
+## Admin Access
 
-Admin functionality is shielded via a custom `role` field on user documents in Firestore. To grant admin access, manually set `role: "admin"` on a user's document in the `users` collection.
-
-------------------------------------------
+Admin functionality is shielded via a custom role field on user documents in Firestore. To grant admin access, manually set role: "admin" on a user's document in the users collection.
 
 ## Encountered Gotchas
 
